@@ -6,7 +6,7 @@ SOURCES=lab1-1.c GL_utilities.c
 MGLUT = 
 
 ifeq ($(UNAME_S),Linux)
-	LDFLAGS += -lGL -lXext -lX11
+	LDFLAGS += -lGL -lX11 -lXext
 	MGLUT = MicroGlut_Linux/MicroGlut.c
 endif
 
@@ -17,9 +17,9 @@ endif
 
 all : clean lab1-1
 
-lab1-1: lab1-1.c GL_utilities.c 
+lab1-1: $(SOURCES)
 	gcc $(CCFLAGS) -o $(EXEC) $(SOURCES) $(MGLUT) $(LDFLAGS)
 
 clean :
-	rm -f lab1-1
+	rm -f $(EXEC)
 
