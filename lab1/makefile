@@ -12,7 +12,7 @@ ifeq ($(UNAME_S),Darwin)
 	LDFLAGS += -I/usr/X11R6/include -L/usr/X11R6/lib
 endif
 
-all : lab1-1
+all : clean lab1-1
 
 lab1-1: lab1-1.c GL_utilities.c 
 	gcc $(CCFLAGS) -o $(EXEC) $(SOURCES) $(LDFLAGS)
