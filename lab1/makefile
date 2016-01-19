@@ -1,21 +1,24 @@
 UNAME_S=$(shell uname -s)
 CCFLAGS = -Wall -std=c99 -DGL_GLEXT_PROTOTYPES
-LDFLAGS = -lGL -lX11 -lm
+LDFLAGS = -lm
 EXEC=lab1-1
-SOURCES=lab1-1.c GL_utilities.c MicroGlut.c
+SOURCES=lab1-1.c GL_utilities.c
+MGLUT = 
 
 ifeq ($(UNAME_S),Linux)
-	LDFLAGS += -lXext
+	LDFLAGS += -lGL -lXext -lX11
+	MGLUT = MicroGlut_Linux/MicroGlut.c
 endif
 
 ifeq ($(UNAME_S),Darwin)
-	LDFLAGS += -I/usr/X11R6/include -L/usr/X11R6/lib
+	LDFLAGS += -framework Cocoa -framework CoreGraphics -framework OpenGL -framework CoreFoundation
+	MGLUT = MicroGlut_Mac/MicroGlut.m
 endif
 
 all : clean lab1-1
 
 lab1-1: lab1-1.c GL_utilities.c 
-	gcc $(CCFLAGS) -o $(EXEC) $(SOURCES) $(LDFLAGS)
+	gcc $(CCFLAGS) -o $(EXEC) $(SOURCES) $(MGLUT) $(LDFLAGS)
 
 clean :
 	rm -f lab1-1

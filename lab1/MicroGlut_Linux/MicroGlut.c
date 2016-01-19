@@ -171,7 +171,7 @@ make_window( Display *dpy, const char *name,
 	else
 #endif
 	   ctx = glXCreateContext( dpy, visinfo, NULL, True );
-	
+
 // Register delete!
 	wmDeleteMessage = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
 	XSetWMProtocols(dpy, win, &wmDeleteMessage, 1); // Register
@@ -209,7 +209,7 @@ void glutCreateWindow(char *windowTitle)
    }
 
    make_window(dpy, windowTitle, winPosX, winPosY, winWidth, winHeight, &win, &ctx);
-   
+
    XMapWindow(dpy, win);
    glXMakeCurrent(dpy, win, ctx);
 }
@@ -278,7 +278,7 @@ void glutMainLoop()
          		if (event.xclient.data.l[0] == wmDeleteMessage) // quit!
          			done = 1;
 	         	break;
-         	case Expose: 
+         	case Expose:
 			op = 1; break; // Update event! Should do draw here.
          	case ConfigureNotify:
 				if (gReshape)
@@ -326,7 +326,7 @@ void glutMainLoop()
 			break;
          }
       }
-      
+
       if (animate)
       {
       	animate = 0;
@@ -360,7 +360,7 @@ void glutPostRedisplay()
 int glutGet(int type)
 {
 	struct timeval tv;
-	
+
 	gettimeofday(&tv, NULL);
 	return (tv.tv_usec - timeStart.tv_usec) / 1000 + (tv.tv_sec - timeStart.tv_sec)*1000;
 }
@@ -497,4 +497,3 @@ char glutKeyIsDown(unsigned char c)
 {
 	return gKeymap[(unsigned int)c];
 }
-

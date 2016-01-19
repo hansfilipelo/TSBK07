@@ -8,7 +8,7 @@
 // See separate Visual Studio version of my demos.
 #ifdef __APPLE__
 	#include <OpenGL/gl3.h>
-	#include "MicroGlut.h"
+	#include "MicroGlut_Mac/MicroGlut.h"
 	// Linking hint for Lightweight IDE
 	// uses framework Cocoa
 #endif
@@ -43,23 +43,23 @@ void init(void)
 	// Load and compile shader
 	program = loadShaders("lab1-1.vert", "lab1-1.frag");
 	printError("init shader");
-	
+
 	// Upload geometry to the GPU:
-	
+
 	// Allocate and activate Vertex Array Object
 	glGenVertexArrays(1, &vertexArrayObjID);
 	glBindVertexArray(vertexArrayObjID);
 	// Allocate Vertex Buffer Objects
 	glGenBuffers(1, &vertexBufferObjID);
-	
+
 	// VBO for vertex data
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObjID);
 	glBufferData(GL_ARRAY_BUFFER, 9*sizeof(GLfloat), vertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(glGetAttribLocation(program, "in_Position"), 3, GL_FLOAT, GL_FALSE, 0, 0); 
+	glVertexAttribPointer(glGetAttribLocation(program, "in_Position"), 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(glGetAttribLocation(program, "in_Position"));
-	
+
 	// End of upload of geometry
-	
+
 	printError("init arrays");
 }
 
@@ -73,9 +73,9 @@ void display(void)
 
 	glBindVertexArray(vertexArrayObjID);	// Select VAO
 	glDrawArrays(GL_TRIANGLES, 0, 3);	// draw object
-	
+
 	printError("display");
-	
+
 	glutSwapBuffers();
 }
 
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 	glutInit(&argc, argv);
 	glutInitContextVersion(3, 2);
 	glutCreateWindow ("GL3 white triangle example");
-	glutDisplayFunc(display); 
+	glutDisplayFunc(display);
 	init ();
 	glutMainLoop();
 }
