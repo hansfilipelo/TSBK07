@@ -1,7 +1,7 @@
 UNAME_S=$(shell uname -s)
 CCFLAGS = -Wall -std=c99 -DGL_GLEXT_PROTOTYPES
 LDFLAGS = -lm
-EXEC=lab1-2
+EXEC=lab1
 SOURCES=lab1-2.c GL_utilities.c
 MGLUT = 
 
@@ -15,9 +15,9 @@ ifeq ($(UNAME_S),Darwin)
 	MGLUT = MicroGlut_Mac/MicroGlut.m
 endif
 
-all : clean lab1-1
+all : clean lab1
 
-lab1-1: $(SOURCES)
+lab1: $(SOURCES)
 	gcc $(CCFLAGS) -o $(EXEC) $(SOURCES) $(MGLUT) $(LDFLAGS)
 
 clean :
