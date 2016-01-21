@@ -2,7 +2,7 @@ UNAME_S=$(shell uname -s)
 CCFLAGS = -Wall -std=c99 -DGL_GLEXT_PROTOTYPES
 LDFLAGS = -lm
 EXEC=lab1
-SOURCES=lab1-2.c GL_utilities.c
+SOURCES=lab1-3.c GL_utilities.c
 MGLUT = 
 
 ifeq ($(UNAME_S),Linux)
