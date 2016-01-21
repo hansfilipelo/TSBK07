@@ -23,6 +23,13 @@ GLfloat vertices[] =
 	0.5f,-0.5f,0.0f
 };
 
+GLfloat color[] =
+{
+	0,1,0,1,
+	0,0,1,1,
+	1,0,0,1
+};
+
 // vertex array object
 unsigned int vertexArrayObjID;
 
@@ -30,6 +37,7 @@ void init(void)
 {
 	// vertex buffer object, used for uploading the geometry
 	unsigned int vertexBufferObjID;
+	unsigned int colorBufferObjID;
 	// Reference to shader program
 	GLuint program;
 
@@ -57,9 +65,26 @@ void init(void)
 
 	// Upload program to and enable program (=shaders) on GPU
 	glVertexAttribPointer(glGetAttribLocation(program, "in_Position"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+		// Choose location of our shader,  vector size 3 (3 scalars per vertice),
+		// type of data (GL_FLOAT).
+		// The two zeros at the end are offsets between each value and initial offset.
+
 	glEnableVertexAttribArray(glGetAttribLocation(program, "in_Position"));
+		// Enable program (shader) with position
 
 	// End of upload of geometry
+
+
+	// ---------------------------------------
+	// Upload color
+	// Allocate Vertex Buffer Objects
+	glGenBuffers(1, &colorBufferObjID); // Generate one vertex buffer
+	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObjID); // Bind generated array buffer to GL_ARRAY_BUFFER
+	glBufferData(GL_ARRAY_BUFFER, 12*sizeof(GLfloat), color, GL_STATIC_DRAW); // Upload geometry (vertices) to vertex array buffer
+	glVertexAttribPointer(glGetAttribLocation(program, "Color"), 4, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(glGetAttribLocation(program, "Color"));
+
+	// ---------------------------------------
 
 	printError("init arrays");
 }
