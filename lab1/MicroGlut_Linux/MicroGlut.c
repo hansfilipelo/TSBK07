@@ -75,425 +75,425 @@ void glutInitWindowSize(int w, int h)
 static void checktimers();
 
 /*
- * Create an RGB, double-buffered window.
- * Return the window and context handles.
- */
+* Create an RGB, double-buffered window.
+* Return the window and context handles.
+*/
 
 static void
 make_window( Display *dpy, const char *name,
-             int x, int y, int width, int height,
-             Window *winRet, GLXContext *ctxRet)
-{
-   int attribs[] = { GLX_RGBA,
-                     GLX_RED_SIZE, 1,
-                     GLX_GREEN_SIZE, 1,
-                     GLX_BLUE_SIZE, 1,
-                     GLX_DOUBLEBUFFER,
-                     GLX_DEPTH_SIZE, 1,
-                     None };
-/*   int stereoAttribs[] = { GLX_RGBA,
-                           GLX_RED_SIZE, 1,
-                           GLX_GREEN_SIZE, 1,
-                           GLX_BLUE_SIZE, 1,
-                           GLX_DOUBLEBUFFER,
-                           GLX_DEPTH_SIZE, 1,
-                           GLX_STEREO,
-                           None };*/
-
-   int scrnum;
-   XSetWindowAttributes attr;
-   unsigned long mask;
-   Window root;
-   Window win;
-   GLXContext ctx;
-   XVisualInfo *visinfo;
-
-   scrnum = DefaultScreen( dpy );
-   root = RootWindow( dpy, scrnum );
-
-//   if (fullscreen)
-//   {
-//      x = 0; y = 0;
-//      width = DisplayWidth( dpy, scrnum );
-//      height = DisplayHeight( dpy, scrnum );
-//   }
-
-//   if (stereo)
-//      visinfo = glXChooseVisual( dpy, scrnum, stereoAttribs );
-//   else
-      visinfo = glXChooseVisual( dpy, scrnum, attribs );
-   if (!visinfo)
-   {
-//      if (stereo) {
-//         printf("Error: couldn't get an RGB, "
-//                "Double-buffered, Stereo visual\n");
-//      } else
-         printf("Error: couldn't get an RGB, Double-buffered visual\n");
-
-      exit(1);
-   }
-
-   /* window attributes */
-   attr.background_pixel = 0;
-   attr.border_pixel = 0;
-   attr.colormap = XCreateColormap( dpy, root, visinfo->visual, AllocNone);
-   attr.event_mask = StructureNotifyMask | ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPress | ButtonReleaseMask | Button1MotionMask | PointerMotionMask;
-   /* XXX this is a bad way to get a borderless window! */
-//   attr.override_redirect = fullscreen;
-   attr.override_redirect = 0;
-   mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask | CWOverrideRedirect;
-
-   win = XCreateWindow( dpy, root, x, y, width, height,
-		        0, visinfo->depth, InputOutput,
-		        visinfo->visual, mask, &attr );
-
-// 3.2 support
-#ifdef glXCreateContextAttribsARB
-	if (gContextVersionMajor > 2)
+	int x, int y, int width, int height,
+	Window *winRet, GLXContext *ctxRet)
 	{
-// We need this for OpenGL3
-		int elemc;
-		GLXFBConfig *fbcfg = glXChooseFBConfig(dpy, scrnum, NULL, &elemc);
-		if (!fbcfg)
-			printf("Couldn't get FB configs\n");
-		else
-			printf("Got %d FB configs\n", elemc);
+		int attribs[] = { GLX_RGBA,
+			GLX_RED_SIZE, 1,
+			GLX_GREEN_SIZE, 1,
+			GLX_BLUE_SIZE, 1,
+			GLX_DOUBLEBUFFER,
+			GLX_DEPTH_SIZE, 1,
+			None };
+			/*   int stereoAttribs[] = { GLX_RGBA,
+			GLX_RED_SIZE, 1,
+			GLX_GREEN_SIZE, 1,
+			GLX_BLUE_SIZE, 1,
+			GLX_DOUBLEBUFFER,
+			GLX_DEPTH_SIZE, 1,
+			GLX_STEREO,
+			None };*/
 
-		int gl3attr[] =
-		{
-			GLX_CONTEXT_MAJOR_VERSION_ARB, gContextVersionMajor,
-			GLX_CONTEXT_MINOR_VERSION_ARB, gContextVersionMinor,
-			GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-			None
-		};
-		ctx = glXCreateContextAttribsARB(dpy, fbcfg[0], NULL, 1, gl3attr);
-	}
-	else
-#endif
-	   ctx = glXCreateContext( dpy, visinfo, NULL, True );
+			int scrnum;
+			XSetWindowAttributes attr;
+			unsigned long mask;
+			Window root;
+			Window win;
+			GLXContext ctx;
+			XVisualInfo *visinfo;
 
-// Register delete!
-	wmDeleteMessage = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
-	XSetWMProtocols(dpy, win, &wmDeleteMessage, 1); // Register
+			scrnum = DefaultScreen( dpy );
+			root = RootWindow( dpy, scrnum );
 
-   /* set hints and properties */
-      XSizeHints sizehints;
-      sizehints.x = x;
-      sizehints.y = y;
-      sizehints.width  = width;
-      sizehints.height = height;
-      sizehints.flags = USSize | USPosition;
-      XSetNormalHints(dpy, win, &sizehints);
-      XSetStandardProperties(dpy, win, name, name,
-                              None, (char **)NULL, 0, &sizehints);
+			//   if (fullscreen)
+			//   {
+			//      x = 0; y = 0;
+			//      width = DisplayWidth( dpy, scrnum );
+			//      height = DisplayHeight( dpy, scrnum );
+			//   }
 
-   if (!ctx)
-   {
-      printf("Error: glXCreateContext failed\n");
-      exit(1);
-   }
+			//   if (stereo)
+			//      visinfo = glXChooseVisual( dpy, scrnum, stereoAttribs );
+			//   else
+			visinfo = glXChooseVisual( dpy, scrnum, attribs );
+			if (!visinfo)
+			{
+				//      if (stereo) {
+				//         printf("Error: couldn't get an RGB, "
+				//                "Double-buffered, Stereo visual\n");
+				//      } else
+				printf("Error: couldn't get an RGB, Double-buffered visual\n");
 
-   XFree(visinfo);
+				exit(1);
+			}
 
-   *winRet = win;
-   *ctxRet = ctx;
-}
+			/* window attributes */
+			attr.background_pixel = 0;
+			attr.border_pixel = 0;
+			attr.colormap = XCreateColormap( dpy, root, visinfo->visual, AllocNone);
+			attr.event_mask = StructureNotifyMask | ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPress | ButtonReleaseMask | Button1MotionMask | PointerMotionMask;
+			/* XXX this is a bad way to get a borderless window! */
+			//   attr.override_redirect = fullscreen;
+			attr.override_redirect = 0;
+			mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask | CWOverrideRedirect;
 
-void glutCreateWindow(char *windowTitle)
-{
-   dpy = XOpenDisplay(NULL);
-   if (!dpy)
-   {
-      printf("Error: couldn't open display %s\n",
-	     windowTitle ? windowTitle : getenv("DISPLAY"));
-   }
+			win = XCreateWindow( dpy, root, x, y, width, height,
+				0, visinfo->depth, InputOutput,
+				visinfo->visual, mask, &attr );
 
-   make_window(dpy, windowTitle, winPosX, winPosY, winWidth, winHeight, &win, &ctx);
-
-   XMapWindow(dpy, win);
-   glXMakeCurrent(dpy, win, ctx);
-}
-
-void (*gDisplay)(void);
-void (*gReshape)(int width, int height);
-void (*gIdle)(void);
-void (*gKey)(unsigned char key, int x, int y);
-void (*gKeyUp)(unsigned char key, int x, int y);
-void (*gMouseMoved)(int x, int y);
-void (*gMouseDragged)(int x, int y);
-void (*gMouseFunc)(int button, int state, int x, int y);
-
-
-void glutReshapeFunc(void (*func)(int width, int height))
-{
-	gReshape = func;
-}
-void glutDisplayFunc(void (*func)(void))
-{
-	gDisplay = func;
-}
-void glutIdleFunc(void (*func)(void))
-{gIdle = func;}
-
-void glutKeyboardFunc(void (*func)(unsigned char key, int x, int y))
-{
-	gKey = func;
-}
-void glutKeyboardUpFunc(void (*func)(unsigned char key, int x, int y))
-{
-	gKeyUp = func;
-}
-
-void glutMouseFunc(void (*func)(int button, int state, int x, int y))
-{gMouseFunc = func;}
-void glutMotionFunc(void (*func)(int x, int y))
-{gMouseDragged = func;}
-void glutPassiveMotionFunc(void (*func)(int x, int y))
-{gMouseMoved = func;}
-
-char gButtonPressed[10] = {0,0,0,0,0,0,0,0,0,0};
-
-void glutMainLoop()
-{
-	char buffer[10];
-	int r; // code;
-	char done = 0;
-
-	char pressed = 0;
-	int i;
-
-	XAllowEvents(dpy, AsyncBoth, CurrentTime);
-
-	while (!done)
-	{
-      int op = 0;
-      while (XPending(dpy) > 0)
-      {
-         XEvent event;
-         XNextEvent(dpy, &event);
-
-         switch (event.type)
-         {
-         	case ClientMessage:
-         		if (event.xclient.data.l[0] == wmDeleteMessage) // quit!
-         			done = 1;
-	         	break;
-         	case Expose:
-			op = 1; break; // Update event! Should do draw here.
-         	case ConfigureNotify:
-				if (gReshape)
-	      			gReshape(event.xconfigure.width, event.xconfigure.height);
-				else
+				// 3.2 support
+				#ifdef glXCreateContextAttribsARB
+				if (gContextVersionMajor > 2)
 				{
-					glViewport(0, 0, event.xconfigure.width, event.xconfigure.height);
-				}
-      			break;
-      		case KeyPress:
-      		case KeyRelease:
-		        r = XLookupString(&event.xkey, buffer, sizeof(buffer),
-                              NULL, NULL);
-
-      			if (event.type == KeyPress)
-	      		{	if (gKey) gKey(buffer[0], 0, 0); gKeymap[(int)buffer[0]] = 1;}
-	      		else
-	      		{	if (gKeyUp) gKeyUp(buffer[0], 0, 0); gKeymap[(int)buffer[0]] = 0;}
-//	      		{	if (gKey) gKey(buffer[0], 0, 0);}
-//	      		else
-//	      		{	if (gKeyUp) gKeyUp(buffer[0], 0, 0);}
-      			break;
-			case ButtonPress:
-				gButtonPressed[event.xbutton.button] = 1;
-				if (gMouseFunc != NULL)
-					gMouseFunc(GLUT_LEFT_BUTTON, GLUT_DOWN, event.xbutton.x, event.xbutton.y);
-				break;
-			case ButtonRelease:
-				gButtonPressed[event.xbutton.button] = 0;
-				if (gMouseFunc != NULL)
-					gMouseFunc(GLUT_LEFT_BUTTON, GLUT_UP, event.xbutton.x, event.xbutton.y);
-				break;
-		case MotionNotify:
-				pressed = 0;
-				for (i = 0; i < 5; i++)
-					if (gButtonPressed[i]) pressed = 1;
-					if (pressed && gMouseDragged)
-						gMouseDragged(event.xbutton.x, event.xbutton.y);
+					// We need this for OpenGL3
+					int elemc;
+					GLXFBConfig *fbcfg = glXChooseFBConfig(dpy, scrnum, NULL, &elemc);
+					if (!fbcfg)
+					printf("Couldn't get FB configs\n");
 					else
-					if (gMouseMoved)
-						gMouseMoved(event.xbutton.x, event.xbutton.y);
-				break;
+					printf("Got %d FB configs\n", elemc);
 
-		default:
-			break;
-         }
-      }
-
-      if (animate)
-      {
-      	animate = 0;
-		if (gDisplay)
-		  	gDisplay();
-		else
-			printf("No display function!\n");
-      	op = 0;
-      }
-		else
-		if (gIdle) gIdle();
-      checktimers();
-   }
-
-	glXMakeCurrent(dpy, None, NULL);
-   glXDestroyContext(dpy, ctx);
-   XDestroyWindow(dpy, win);
-   XCloseDisplay(dpy);
-}
-
-void glutSwapBuffers()
-{
-	glXSwapBuffers(dpy, win);
-}
-
-void glutPostRedisplay()
-{
-	animate = 1;
-}
-
-int glutGet(int type)
-{
-	struct timeval tv;
-
-	gettimeofday(&tv, NULL);
-	return (tv.tv_usec - timeStart.tv_usec) / 1000 + (tv.tv_sec - timeStart.tv_sec)*1000;
-}
-
-// NOTE: The timer is not designed with any multithreading in mind!
-typedef struct TimerRec
-{
-	int arg;
-	int time;
-	int repeatTime;
-	void (*func)(int arg);
-	char repeating;
-	struct TimerRec *next;
-	struct TimerRec *prev;
-} TimerRec;
-
-TimerRec *gTimers = NULL;
-
-void glutTimerFunc(int millis, void (*func)(int arg), int arg)
-{
-	TimerRec *t	= (TimerRec *)malloc(sizeof(TimerRec));
-	t->arg = arg;
-	t->time = millis + glutGet(GLUT_ELAPSED_TIME);
-	t->repeatTime = 0;
-	t->repeating = 0;
-	t->func = func;
-	t->next = gTimers;
-	t->prev = NULL;
-	if (gTimers != NULL)
-		gTimers->prev = t;
-	gTimers = t;
-}
-
-// Added by Ingemar
-// void glutRepeatingTimerFunc(int millis)
-void glutRepeatingTimer(int millis)
-{
-	TimerRec *t	= (TimerRec *)malloc(sizeof(TimerRec));
-	t->arg = 0;
-	t->time = millis + glutGet(GLUT_ELAPSED_TIME);
-	t->repeatTime = millis;
-	t->repeating = 1;
-	t->func = NULL;
-	t->next = gTimers;
-	t->prev = NULL;
-	if (gTimers != NULL)
-		gTimers->prev = t;
-	gTimers = t;
-}
-
-static void checktimers()
-{
-	if (gTimers != NULL)
-	{
-		TimerRec *t, *firethis = NULL;
-		int now = glutGet(GLUT_ELAPSED_TIME);
-		int nextTime = now + 1000; // Distant future, 1 second
-		t = gTimers;
-		for (t = gTimers; t != NULL; t = t->next)
-		{
-			if (t->time < nextTime) nextTime = t->time; // Time for the next one
-			if (t->time < now) // See if this is due to fire
-			{
-				firethis = t;
-			}
-		}
-		if (firethis != NULL)
-		{
-		// Fire the timer
-			if (firethis->func != NULL)
-				firethis->func(firethis->arg);
-			else
-				glutPostRedisplay();
-		// Remove the timer if it was one-shot, otherwise update the time
-			if (firethis->repeating)
-			{
-				firethis->time = now + firethis->repeatTime;
-			}
-			else
-			{
-				if (firethis->prev != NULL)
-					firethis->prev->next = firethis->next;
+					int gl3attr[] =
+					{
+						GLX_CONTEXT_MAJOR_VERSION_ARB, gContextVersionMajor,
+						GLX_CONTEXT_MINOR_VERSION_ARB, gContextVersionMinor,
+						GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+						None
+					};
+					ctx = glXCreateContextAttribsARB(dpy, fbcfg[0], NULL, 1, gl3attr);
+				}
 				else
-					gTimers = firethis->next;
-                if (firethis->next != NULL)
-					firethis->next->prev = firethis->prev;
-				free(firethis);
-			}
-		}
-		// Otherwise, sleep until any timer should fire
-        if (!animate)
-			if (nextTime > now)
-            {
-		usleep((nextTime - now)*1000);
-            }
-	}
-    else
-// If no timer and no update, sleep a little to keep CPU load low
-        if (!animate)
-            usleep(10);
-}
+				#endif
+				ctx = glXCreateContext( dpy, visinfo, NULL, True );
 
-void glutInitContextVersion(int major, int minor)
-{
-	gContextVersionMajor = major;
-	gContextVersionMinor = minor;
-}
+				// Register delete!
+				wmDeleteMessage = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
+				XSetWMProtocols(dpy, win, &wmDeleteMessage, 1); // Register
 
-// Based on FreeGlut glutWarpPointer
-/*
- * Moves the mouse pointer to given window coordinates
- */
-void glutWarpPointer( int x, int y )
-{
-    if (dpy == NULL)
-    {
-      fprintf(stderr, "glutWarpPointer failed: MicroGlut not initialized!\n");
-    	return;
-    }
+				/* set hints and properties */
+				XSizeHints sizehints;
+				sizehints.x = x;
+				sizehints.y = y;
+				sizehints.width  = width;
+				sizehints.height = height;
+				sizehints.flags = USSize | USPosition;
+				XSetNormalHints(dpy, win, &sizehints);
+				XSetStandardProperties(dpy, win, name, name,
+					None, (char **)NULL, 0, &sizehints);
 
-    XWarpPointer(
-        dpy, // fgDisplay.Display,
-        None,
-        win, // fgStructure.CurrentWindow->Window.Handle,
-        0, 0, 0, 0,
-        x, y
-    );
-    /* Make the warp visible immediately. */
-    XFlush( dpy );
-//    XFlush( fgDisplay.Display );
-}
+					if (!ctx)
+					{
+						printf("Error: glXCreateContext failed\n");
+						exit(1);
+					}
 
-char glutKeyIsDown(unsigned char c)
-{
-	return gKeymap[(unsigned int)c];
-}
+					XFree(visinfo);
+
+					*winRet = win;
+					*ctxRet = ctx;
+				}
+
+				void glutCreateWindow(char *windowTitle)
+				{
+					dpy = XOpenDisplay(NULL);
+					if (!dpy)
+					{
+						printf("Error: couldn't open display %s\n",
+						windowTitle ? windowTitle : getenv("DISPLAY"));
+					}
+
+					make_window(dpy, windowTitle, winPosX, winPosY, winWidth, winHeight, &win, &ctx);
+
+					XMapWindow(dpy, win);
+					glXMakeCurrent(dpy, win, ctx);
+				}
+
+				void (*gDisplay)(void);
+				void (*gReshape)(int width, int height);
+				void (*gIdle)(void);
+				void (*gKey)(unsigned char key, int x, int y);
+				void (*gKeyUp)(unsigned char key, int x, int y);
+				void (*gMouseMoved)(int x, int y);
+				void (*gMouseDragged)(int x, int y);
+				void (*gMouseFunc)(int button, int state, int x, int y);
+
+
+				void glutReshapeFunc(void (*func)(int width, int height))
+				{
+					gReshape = func;
+				}
+				void glutDisplayFunc(void (*func)(void))
+				{
+					gDisplay = func;
+				}
+				void glutIdleFunc(void (*func)(void))
+				{gIdle = func;}
+
+				void glutKeyboardFunc(void (*func)(unsigned char key, int x, int y))
+				{
+					gKey = func;
+				}
+				void glutKeyboardUpFunc(void (*func)(unsigned char key, int x, int y))
+				{
+					gKeyUp = func;
+				}
+
+				void glutMouseFunc(void (*func)(int button, int state, int x, int y))
+				{gMouseFunc = func;}
+				void glutMotionFunc(void (*func)(int x, int y))
+				{gMouseDragged = func;}
+				void glutPassiveMotionFunc(void (*func)(int x, int y))
+				{gMouseMoved = func;}
+
+				char gButtonPressed[10] = {0,0,0,0,0,0,0,0,0,0};
+
+				void glutMainLoop()
+				{
+					char buffer[10];
+					int r; // code;
+					char done = 0;
+
+					char pressed = 0;
+					int i;
+
+					XAllowEvents(dpy, AsyncBoth, CurrentTime);
+
+					while (!done)
+					{
+						int op = 0;
+						while (XPending(dpy) > 0)
+						{
+							XEvent event;
+							XNextEvent(dpy, &event);
+
+							switch (event.type)
+							{
+								case ClientMessage:
+								if (event.xclient.data.l[0] == wmDeleteMessage) // quit!
+								done = 1;
+								break;
+								case Expose:
+								op = 1; break; // Update event! Should do draw here.
+								case ConfigureNotify:
+								if (gReshape)
+								gReshape(event.xconfigure.width, event.xconfigure.height);
+								else
+								{
+									glViewport(0, 0, event.xconfigure.width, event.xconfigure.height);
+								}
+								break;
+								case KeyPress:
+								case KeyRelease:
+								r = XLookupString(&event.xkey, buffer, sizeof(buffer),
+								NULL, NULL);
+
+								if (event.type == KeyPress)
+								{	if (gKey) gKey(buffer[0], 0, 0); gKeymap[(int)buffer[0]] = 1;}
+								else
+								{	if (gKeyUp) gKeyUp(buffer[0], 0, 0); gKeymap[(int)buffer[0]] = 0;}
+								//	      		{	if (gKey) gKey(buffer[0], 0, 0);}
+								//	      		else
+								//	      		{	if (gKeyUp) gKeyUp(buffer[0], 0, 0);}
+								break;
+								case ButtonPress:
+								gButtonPressed[event.xbutton.button] = 1;
+								if (gMouseFunc != NULL)
+								gMouseFunc(GLUT_LEFT_BUTTON, GLUT_DOWN, event.xbutton.x, event.xbutton.y);
+								break;
+								case ButtonRelease:
+								gButtonPressed[event.xbutton.button] = 0;
+								if (gMouseFunc != NULL)
+								gMouseFunc(GLUT_LEFT_BUTTON, GLUT_UP, event.xbutton.x, event.xbutton.y);
+								break;
+								case MotionNotify:
+								pressed = 0;
+								for (i = 0; i < 5; i++)
+								if (gButtonPressed[i]) pressed = 1;
+								if (pressed && gMouseDragged)
+								gMouseDragged(event.xbutton.x, event.xbutton.y);
+								else
+								if (gMouseMoved)
+								gMouseMoved(event.xbutton.x, event.xbutton.y);
+								break;
+
+								default:
+								break;
+							}
+						}
+
+						if (animate)
+						{
+							animate = 0;
+							if (gDisplay)
+							gDisplay();
+							else
+							printf("No display function!\n");
+							op = 0;
+						}
+						else
+						if (gIdle) gIdle();
+						checktimers();
+					}
+
+					glXMakeCurrent(dpy, None, NULL);
+					glXDestroyContext(dpy, ctx);
+					XDestroyWindow(dpy, win);
+					XCloseDisplay(dpy);
+				}
+
+				void glutSwapBuffers()
+				{
+					glXSwapBuffers(dpy, win);
+				}
+
+				void glutPostRedisplay()
+				{
+					animate = 1;
+				}
+
+				int glutGet(int type)
+				{
+					struct timeval tv;
+
+					gettimeofday(&tv, NULL);
+					return (tv.tv_usec - timeStart.tv_usec) / 1000 + (tv.tv_sec - timeStart.tv_sec)*1000;
+				}
+
+				// NOTE: The timer is not designed with any multithreading in mind!
+				typedef struct TimerRec
+				{
+					int arg;
+					int time;
+					int repeatTime;
+					void (*func)(int arg);
+					char repeating;
+					struct TimerRec *next;
+					struct TimerRec *prev;
+				} TimerRec;
+
+				TimerRec *gTimers = NULL;
+
+				void glutTimerFunc(int millis, void (*func)(int arg), int arg)
+				{
+					TimerRec *t	= (TimerRec *)malloc(sizeof(TimerRec));
+					t->arg = arg;
+					t->time = millis + glutGet(GLUT_ELAPSED_TIME);
+					t->repeatTime = 0;
+					t->repeating = 0;
+					t->func = func;
+					t->next = gTimers;
+					t->prev = NULL;
+					if (gTimers != NULL)
+					gTimers->prev = t;
+					gTimers = t;
+				}
+
+				// Added by Ingemar
+				// void glutRepeatingTimerFunc(int millis)
+				void glutRepeatingTimer(int millis)
+				{
+					TimerRec *t	= (TimerRec *)malloc(sizeof(TimerRec));
+					t->arg = 0;
+					t->time = millis + glutGet(GLUT_ELAPSED_TIME);
+					t->repeatTime = millis;
+					t->repeating = 1;
+					t->func = NULL;
+					t->next = gTimers;
+					t->prev = NULL;
+					if (gTimers != NULL)
+					gTimers->prev = t;
+					gTimers = t;
+				}
+
+				static void checktimers()
+				{
+					if (gTimers != NULL)
+					{
+						TimerRec *t, *firethis = NULL;
+						int now = glutGet(GLUT_ELAPSED_TIME);
+						int nextTime = now + 1000; // Distant future, 1 second
+						t = gTimers;
+						for (t = gTimers; t != NULL; t = t->next)
+						{
+							if (t->time < nextTime) nextTime = t->time; // Time for the next one
+							if (t->time < now) // See if this is due to fire
+							{
+								firethis = t;
+							}
+						}
+						if (firethis != NULL)
+						{
+							// Fire the timer
+							if (firethis->func != NULL)
+							firethis->func(firethis->arg);
+							else
+							glutPostRedisplay();
+							// Remove the timer if it was one-shot, otherwise update the time
+							if (firethis->repeating)
+							{
+								firethis->time = now + firethis->repeatTime;
+							}
+							else
+							{
+								if (firethis->prev != NULL)
+								firethis->prev->next = firethis->next;
+								else
+								gTimers = firethis->next;
+								if (firethis->next != NULL)
+								firethis->next->prev = firethis->prev;
+								free(firethis);
+							}
+						}
+						// Otherwise, sleep until any timer should fire
+						if (!animate)
+						if (nextTime > now)
+						{
+							usleep((nextTime - now)*1000);
+						}
+					}
+					else
+					// If no timer and no update, sleep a little to keep CPU load low
+					if (!animate)
+					usleep(10);
+				}
+
+				void glutInitContextVersion(int major, int minor)
+				{
+					gContextVersionMajor = major;
+					gContextVersionMinor = minor;
+				}
+
+				// Based on FreeGlut glutWarpPointer
+				/*
+				* Moves the mouse pointer to given window coordinates
+				*/
+				void glutWarpPointer( int x, int y )
+				{
+					if (dpy == NULL)
+					{
+						fprintf(stderr, "glutWarpPointer failed: MicroGlut not initialized!\n");
+						return;
+					}
+
+					XWarpPointer(
+						dpy, // fgDisplay.Display,
+						None,
+						win, // fgStructure.CurrentWindow->Window.Handle,
+						0, 0, 0, 0,
+						x, y
+					);
+					/* Make the warp visible immediately. */
+					XFlush( dpy );
+					//    XFlush( fgDisplay.Display );
+				}
+
+				char glutKeyIsDown(unsigned char c)
+				{
+					return gKeymap[(unsigned int)c];
+				}
