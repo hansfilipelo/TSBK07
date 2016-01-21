@@ -1,4 +1,8 @@
-// Lab 1-1.
+// Questions:
+// 1) Why don't we need a buffer to upload translMatrix? Do we need buffers for everything that is not uniform (for example different colors)?
+
+
+// Lab 1-2.
 // This is the same as the first simple example in the course book,
 // but with a few error checks.
 // Remember to copy your file to a new on appropriate places during the lab so you keep old results.
@@ -13,6 +17,9 @@
 // uses framework Cocoa
 #endif
 #include "GL_utilities.h"
+#include <math.h>
+
+#define PI 3.14159265
 
 // Globals
 // Data would normally be read from files
@@ -25,10 +32,29 @@ GLfloat vertices[] =
 
 GLfloat color[] =
 {
-	0.0f,0.0f,1.0f,1.0f,
-	0.5f,1.0f,0.0f,1.0f,
-	1.0f,0.0f,0.0f,1.0f
+	1.0f,1.0f,1.0f,1.0f,
 };
+
+GLfloat translMatrix[] =
+{
+    1.0f, 0.0f, 0.0f, 0.5f,
+    0.0f, 1.0f, 0.0f, 0.5f,
+    0.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 1.0f
+};
+
+GLfloat rotMatrix[] =
+{
+    1.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 1.0f
+};
+
+GLfloat phi = PI/2;
+GLfloat cosPhi;
+GLfloat sinPhi;
+GLfloat minSin;
 
 // vertex array object
 unsigned int vertexArrayObjID;
@@ -49,7 +75,7 @@ void init(void)
 	printError("GL inits");
 
 	// Load and compile shader
-	program = loadShaders("lab1-1.vert", "lab1-1.frag"); // These are the programs that run on GPU
+	program = loadShaders("lab1-2.vert", "lab1-2.frag"); // These are the programs that run on GPU
 	printError("init shader");
 
 	// Upload geometry to the GPU:
@@ -74,17 +100,26 @@ void init(void)
 
 	// End of upload of geometry
 
-
 	// ---------------------------------------
 	// Upload color
-	// Allocate Vertex Buffer Objects
-	glGenBuffers(1, &colorBufferObjID); // Generate one vertex buffer
-	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObjID); // Bind generated array buffer to GL_ARRAY_BUFFER
-	glBufferData(GL_ARRAY_BUFFER, 12*sizeof(GLfloat), color, GL_STATIC_DRAW); // Upload geometry (vertices) to vertex array buffer
-	glVertexAttribPointer(glGetAttribLocation(program, "Color"), 4, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(glGetAttribLocation(program, "Color"));
-
+	glUniform4fv(glGetUniformLocation(program, "color"), 1, color);
+    
 	// ---------------------------------------
+    
+    // Send translMatrix to Vertex
+    glUniformMatrix4fv(glGetUniformLocation(program, "translMatrix"), 1, GL_TRUE, translMatrix);
+    
+    // Send rotMatrix to Vertex
+    cosPhi = cos(phi);
+    sinPhi = sin(phi);
+    minSin = -sinPhi;
+    
+    rotMatrix[0] = cosPhi;
+    rotMatrix[5] = cosPhi;
+    rotMatrix[1] = minSin;
+    rotMatrix[4] = sinPhi;
+    
+    glUniformMatrix4fv(glGetUniformLocation(program, "rotMatrix"), 1, GL_TRUE, rotMatrix);
 
 	printError("init arrays");
 }
