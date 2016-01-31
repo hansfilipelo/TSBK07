@@ -124,6 +124,14 @@ GLfloat rotMatrix[] =
     0.0f, 0.0f, 0.0f, 1.0f
 };
 
+GLfloat rotMatrixX[] =
+{
+    1.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 1.0f
+};
+
 GLfloat phi = 0;
 GLfloat cosPhi;
 GLfloat sinPhi;
@@ -146,7 +154,8 @@ void init(void)
   // GL inits
   glClearColor(1,1,1,0);
   //glClearColor(0.2,0.2,0.5,0); // Color in buffer upon clear buffer
-	glDisable(GL_DEPTH_TEST); // Since 2D I guess?
+  glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
+	glEnable(GL_DEPTH_TEST);
 	printError("GL inits");
 
 	// Load and compile shader
@@ -181,7 +190,7 @@ void init(void)
 	glGenBuffers(1, &colorBufferObjID); // Generate one vertex buffer
 	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObjID); // Bind generated array buffer to GL_ARRAY_BUFFER
 	glBufferData(GL_ARRAY_BUFFER, 9*12*sizeof(GLfloat), color, GL_STATIC_DRAW); // Upload geometry (vertices) to vertex array buffer
-	glVertexAttribPointer(glGetAttribLocation(program, "Color"), 4, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(glGetAttribLocation(program, "Color"), 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(glGetAttribLocation(program, "Color"));
 
 	// --------------------------------------
@@ -197,7 +206,7 @@ void display(void)
 	printError("pre display");
 
 	// clear the screen (using chosen color earlier)
-	glClear(GL_COLOR_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Set rotation matrix
 	phi += PI/50;
@@ -210,11 +219,17 @@ void display(void)
 	rotMatrix[1] = minSin;
 	rotMatrix[4] = sinPhi;
 
+  rotMatrixX[5] = cosPhi;
+  rotMatrixX[6] = minSin;
+  rotMatrixX[9] = sinPhi;
+  rotMatrixX[10] = cosPhi;
+
 	// Send translMatrix to Vertex
 	glUniformMatrix4fv(glGetUniformLocation(program, "rotMatrix"), 1, GL_TRUE, rotMatrix);
+  glUniformMatrix4fv(glGetUniformLocation(program, "rotMatrixX"), 1, GL_TRUE, rotMatrixX);
 
 	glBindVertexArray(vertexArrayObjID);	// Select Vertex Array Oobject
-	glDrawArrays(GL_TRIANGLES, 0, 3);	// draw 3 vertices from chosen VAO starting with nr 0, counting up
+	glDrawArrays(GL_TRIANGLES, 0, 3*12);	// draw 3 vertices from chosen VAO starting with nr 0, counting up
 
 	printError("display");
 
