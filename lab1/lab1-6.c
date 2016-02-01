@@ -154,7 +154,7 @@ void display(void)
   glUniformMatrix4fv(glGetUniformLocation(program, "rotMatrixX"), 1, GL_TRUE, rotMatrixX);
 
   glBindVertexArray(bunnyVertexArrayObjID);	// Select VAO
-  glDrawElements(GL_TRIANGLES, m->numVertices, GL_UNSIGNED_INT, 0L);
+  glDrawElements(GL_TRIANGLES, m->numIndices, GL_UNSIGNED_INT, 0L);
 
 	printError("display");
 
