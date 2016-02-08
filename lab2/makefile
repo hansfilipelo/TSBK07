@@ -3,7 +3,7 @@ CCFLAGS = -Wall -std=c99 -DGL_GLEXT_PROTOTYPES
 LDFLAGS = -lm
 EXEC=lab2
 SOURCES=lab2-1.c loadobj.c GL_utilities.c
-MGLUT = 
+MGLUT =
 
 ifeq ($(UNAME_S),Linux)
 	LDFLAGS += -lGL -lX11 -lXext
@@ -15,11 +15,10 @@ ifeq ($(UNAME_S),Darwin)
 	MGLUT = MicroGlut_Mac/MicroGlut.m
 endif
 
-all : clean lab1
+all : clean $(EXEC)
 
-lab1: $(SOURCES)
+$(EXEC): $(SOURCES)
 	gcc $(CCFLAGS) -o $(EXEC) $(SOURCES) $(MGLUT) $(LDFLAGS)
 
 clean :
 	rm -f $(EXEC)
-
