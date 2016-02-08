@@ -7,12 +7,12 @@ MGLUT =
 
 ifeq ($(UNAME_S),Linux)
 	LDFLAGS += -lGL -lX11 -lXext
-	MGLUT = MicroGlut_Linux/MicroGlut.c
+	MGLUT = Linux/MicroGlut.c
 endif
 
 ifeq ($(UNAME_S),Darwin)
 	LDFLAGS += -framework Cocoa -framework CoreGraphics -framework OpenGL -framework CoreFoundation
-	MGLUT = MicroGlut_Mac/MicroGlut.m
+	MGLUT = mac/MicroGlut.m
 endif
 
 all : clean $(EXEC)

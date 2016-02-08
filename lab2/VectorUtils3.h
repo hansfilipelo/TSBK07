@@ -7,9 +7,14 @@
 #ifdef __APPLE__
 	#include <OpenGL/gl3.h>
 #else
+	#if defined(_WIN32)
+		#include "glew.h"
+	#endif
 	#include <GL/gl.h>
 #endif
 #include <math.h>
+#include <stdio.h>
+
 
 #ifndef M_PI
 #define M_PI           3.14159265358979323846
@@ -116,6 +121,8 @@ extern "C" {
                       float znear, float zfar);
 	mat4 frustum(float left, float right, float bottom, float top,
                   float znear, float zfar);
+	mat4 ortho(GLfloat left, GLfloat right, GLfloat bottom,
+			GLfloat top, GLfloat near, GLfloat far);
 
 // For creating a normal matrix
 	mat3 InvertMat3(mat3 in);
@@ -127,6 +134,11 @@ extern "C" {
 	mat4 mat3tomat4(mat3 m);
 	vec3 vec4tovec3(vec4 v);
 	vec4 vec3tovec4(vec3 v);
+
+// Convenient printing calls
+	void printMat4(mat4 m);
+	void printVec3(vec3 in);
+
 #ifdef __cplusplus
 }
 #endif

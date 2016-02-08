@@ -18,7 +18,6 @@ void glutKeyboardUpFunc(void (*func)(unsigned char key, int x, int y));
 
 void glutMouseFunc(void (*func)(int button, int state, int x, int y));
 void glutPassiveMotionFunc(void (*func)(int x, int y));
-void glutMotionFunc(void (*func)(int x, int y));
 
 void glutInitWindowPosition (int x, int y);
 void glutInitWindowSize (int width, int height);
@@ -36,21 +35,13 @@ void glutIdleFunc(void (*func)(void));
 void glutTimerFunc(int millis, void (*func)(int arg), int arg);
 // Ingemar's version
 void glutRepeatingTimer(int millis);
- // Old name, will be removed:
-#define glutRepeatingTimerFunc glutRepeatingTimer
 
-// New call for polling the keyboard, good for games
-char glutKeyIsDown(unsigned char c);
-void glutWarpPointer( int x, int y );
-
-void glutReshapeWindow(int width, int height);
-void glutSetWindowTitle(char *title);
 void glutInitContextVersion(int major, int minor);
 
 /* Mouse buttons. */
 #define GLUT_LEFT_BUTTON		0
 // No support for middle yet
-#define GLUT_MIDDLE_BUTTON		1
+//#define GLUT_MIDDLE_BUTTON		1
 #define GLUT_RIGHT_BUTTON		2
 
 /* Mouse button  state. */

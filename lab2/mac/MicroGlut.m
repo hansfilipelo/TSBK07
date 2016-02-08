@@ -42,9 +42,20 @@
 // 150205: Added glutPositionWindow and glutFullScreen plus glutExitFullScreen.
 // 150209: Small correction to full-screen mode, restores windows name!
 // 150424: Rewrote glutWarpPointer again!
+// 150520: Added glutExit().
+// 150618: Added glutMouseIsDown() (not in the old GLUT API but a nice extension!).
+// Added #ifdefs to produce errors if compiled on the wrong platform!
+// 150820: Minor bug fix in glutReshapeWindow.
+// 150827: Hacked around the needlessly deprecated convertBaseToScreen. Also skipped
+// CGSetLocalEventsSuppressionInterval which MIGHT not be needed...
+// 150918: More keys map properly to the GLUT constants, like GLUT_KEY_ESC.
+// Rewrote glutCheckLoop, now it seems to work fine. Tested with the "triangle" demo that lacks main loop.
+// Added GLUT_QUIT_FLAG for glutGet.
+// 150919: Added GLUT_MOUSE_POSITION_X and GLUT_MOUSE_POSITION_Y to glutGet.
+// 150923: Changed the keyboard special key constants to avoid all usable ASCII codes. This makes the "special key" calls unnecessary and keyboard handling simpler. We can stop using "special key" callbacks alltogether.
 
 // Incompatibility in mouse coordinates; global or local?
-// Should be local!
+// Should be local! (I think they are now!)
 
 #import <Cocoa/Cocoa.h>
 #include <OpenGL/gl.h>
@@ -55,6 +66,11 @@
 #include <sys/time.h>
 
 #include "MicroGlut.h"
+
+// If this is compiled on something else than a Mac, tell me!
+#ifndef __APPLE__
+	ERROR! This (MicroGlut.m) is the Mac version of MicroGlut which will not work on other platforms!
+#endif
 
 // Comment out to support GL2, requiring glutInitContextVersion for newer.
 //#define GL3ONLY
@@ -75,6 +91,7 @@ void (*gIdle)(void);
 char updatePending = 1;
 char gRunning = 1;
 char gKeymap[256];
+char gButtonPressed[10] = {0,0,0,0,0,0,0,0,0,0};
 int gContextVersionMajor = 0;
 int gContextVersionMinor = 0;
 char gTitle[255] = "MicroGlut window"; // Saved title, so we can restore after full screen!
@@ -152,6 +169,10 @@ void MakeContext(NSView *view)
 	
 	m_context = [[NSOpenGLContext alloc] initWithFormat: fmt shareContext: nil];
 	[fmt release];
+//	[m_context makeCurrentContext];
+
+
+//	[m_context setView: theView];
 	[m_context makeCurrentContext];
 }
 
@@ -261,16 +282,17 @@ int glutGetMenu(void)
 // End of MicroGlut button support
 
 
-static char doKeyboardEvent(NSEvent *theEvent, void (*func)(unsigned char key, int x, int y), void (*specialfunc)(unsigned char key, int x, int y), int keyMapValue)
+static void doKeyboardEvent(NSEvent *theEvent, void (*func)(unsigned char key, int x, int y), void (*specialfunc)(unsigned char key, int x, int y), int keyMapValue)
 {
 	char *chars;
 	
 	chars = (char *)[[theEvent characters] cStringUsingEncoding: NSMacOSRomanStringEncoding];
-	
+	NSPoint mouseDownPos = [theEvent locationInWindow];
+
 	if (chars != NULL)
 	{
 		if (func != NULL) // Change 120913
-			func(chars[0], 0, 0); // TO DO: x and y
+			func(chars[0], mouseDownPos.x, mouseDownPos.y); // TO DO: x and y
 		
 		gKeymap[(unsigned int)chars[0]] = keyMapValue;
 	}
@@ -279,6 +301,22 @@ static char doKeyboardEvent(NSEvent *theEvent, void (*func)(unsigned char key, i
 		char code;
 		switch( [theEvent keyCode] )
 		{
+			case 0x35: code = GLUT_KEY_ESC; break;
+			case 0x30: code = GLUT_KEY_TAB; break;
+			case 0x24: code = GLUT_KEY_RETURN; break;
+			case 0x31: code = GLUT_KEY_SPACE; break;
+			case 0x29: code = GLUT_KEY_SEMICOLON; break;
+			case 0x2B: code = GLUT_KEY_COMMA; break;
+			case 0x2F: code = GLUT_KEY_DECIMAL; break;
+			case 0x32: code = GLUT_KEY_GRAVE; break;
+			case 0x27: code = GLUT_KEY_QUOTE; break;
+			case 0x21: code = GLUT_KEY_LBRACKET; break;
+			case 0x1E: code = GLUT_KEY_RBRACKET; break;
+			case 0x2A: code = GLUT_KEY_BACKSLASH; break;
+			case 0x2C: code = GLUT_KEY_SLASH; break;
+			case 0x18:
+			case 0x51: code = GLUT_KEY_EQUAL; break;
+
 			case 126: code = GLUT_KEY_UP; break;
 			case 125: code = GLUT_KEY_DOWN; break;
 			case 124: code = GLUT_KEY_RIGHT; break;
@@ -298,7 +336,11 @@ static char doKeyboardEvent(NSEvent *theEvent, void (*func)(unsigned char key, i
 			default: code = [theEvent keyCode];
 		}
 		if (specialfunc != NULL) // Change 130114
-			specialfunc(code, 0, 0); // TO DO: x and y
+			specialfunc(code, mouseDownPos.x, mouseDownPos.y); // TO DO: x and y
+		else // If no special, send to normal (future preferred way)
+		if (func != NULL) // Change 150114
+			func(code, mouseDownPos.x, mouseDownPos.y); // TO DO: x and y
+// NOTE: This was a bug until I modified the special key constants! We can now check gKeymap with normal ASCII and special codes with the same table!
 		gKeymap[code] = keyMapValue;
 	}
 }
@@ -322,18 +364,21 @@ static char doKeyboardEvent(NSEvent *theEvent, void (*func)(unsigned char key, i
 
 #define Pi 3.1415
 
+// Mouse position is saved so it can be retrieved at any time with glutGet
+NSPoint gMousePosition;
+
 @implementation GlutView
 
 -(void) mouseMoved:(NSEvent *)theEvent
 {
-	NSPoint p;
+//	NSPoint p;
 	[m_context makeCurrentContext];
 	
+	gMousePosition = [theEvent locationInWindow];
+	gMousePosition = [self convertPoint: gMousePosition fromView: nil];
 	if (gMouseMoved != nil)
 	{
-		p = [theEvent locationInWindow];
-		p = [self convertPoint: p fromView: nil];
-		gMouseMoved(p.x, p.y);
+		gMouseMoved(gMousePosition.x, gMousePosition.y);
 	}
 }
 
@@ -373,13 +418,15 @@ char gLeftIsRight = 0;
 	NSPoint p;
 	[m_context makeCurrentContext];
 	
+	gButtonPressed[0] = 1; // Could maybe be modified by NSControlKeyMask...?
+
 	if (gMouseFunc != nil)
 	{
 		// Convert location in window to location in view
 		p = [theEvent locationInWindow];
-	printf("mouseDown before convertPoint %f %f \n", p.x, p.y);
+//	printf("mouseDown before convertPoint %f %f \n", p.x, p.y);
 		p = [self convertPoint: p fromView: nil];
-	printf("mouseDown %f %f \n", p.x, p.y);
+//	printf("mouseDown %f %f \n", p.x, p.y);
 		
 		if ([NSEvent modifierFlags] & NSControlKeyMask)
 		{
@@ -412,7 +459,9 @@ char gLeftIsRight = 0;
 {
 	NSPoint p;
 	[m_context makeCurrentContext];
-	
+
+	gButtonPressed[0] = 0;
+
 	if (gMouseFunc != nil)
 	{
 		// Convert location in window to location in view
@@ -432,6 +481,8 @@ char gLeftIsRight = 0;
 	NSPoint p;
 	[m_context makeCurrentContext];
 	
+	gButtonPressed[1] = 1;
+
 	if (gMouseFunc != nil)
 	{
 		// Convert location in window to location in view
@@ -449,7 +500,9 @@ char gLeftIsRight = 0;
 {
 	NSPoint p;
 	[m_context makeCurrentContext];
-	
+
+	gButtonPressed[1] = 0;
+
 	if (gMouseFunc != nil)
 	{
 		// Convert location in window to location in view
@@ -542,7 +595,7 @@ char gLeftIsRight = 0;
 		gDisplay();
 	
 	[m_context flushBuffer];
-	[NSOpenGLContext clearCurrentContext];
+//	[NSOpenGLContext clearCurrentContext];
 }
 
 -(void)windowWillClose:(NSNotification *)note
@@ -634,7 +687,7 @@ void home()
 	CFRelease(resourcesURL);
 
 	chdir(path);
-	printf("Current Path: %s\n", path);
+//	printf("Current Path: %s\n", path);
 }
 
 // ------------------ Main program ---------------------
@@ -650,7 +703,7 @@ void home()
 }
 @end
 
-MGApplication *myApp;
+NSApplication *myApp;
 NSView *view;
 NSAutoreleasePool *pool;
 NSWindow *window;
@@ -715,7 +768,10 @@ void glutInit(int *argcp, char **argv)
 	CreateMenu();
 	myTimerController = [TimerController alloc];
 	
-	CGSetLocalEventsSuppressionInterval(0.0); // For glutWarpPointer
+	
+	// Apple REALLY doesn't like us to mess with the mouse pointer. Now this is deprecated...
+	// and some sources say it isn't needed.
+//	CGSetLocalEventsSuppressionInterval(0.0); // For glutWarpPointer
 
 	int i;
 	for (i = 0; i < 256; i++) gKeymap[i] = 0;
@@ -736,7 +792,7 @@ void glutInitWindowSize (int width, int height)
 	gWindowWidth = width;
 	gWindowHeight = height;
 }
-void glutCreateWindow (char *windowTitle)
+int glutCreateWindow (char *windowTitle)
 {
 	NSRect frame = NSMakeRect(gWindowPosX, NSScreen.mainScreen.frame.size.height - gWindowPosY-gWindowHeight, gWindowWidth, gWindowHeight);
 	
@@ -761,9 +817,14 @@ void glutCreateWindow (char *windowTitle)
 	[window setDelegate: (GlutView*)view];
 	[window makeKeyAndOrderFront: nil];
 	[window makeFirstResponder: view]; // Added 130214
+	[window setContentView: view];
+	return 0; // Fake placeholder
 }
 
-void glutMainLoop()
+
+// MAIN LOOP
+
+void oglutMainLoop()
 {
 	[window setContentView: view];
 
@@ -802,20 +863,83 @@ void glutMainLoop()
 	}
 }
 
-// This won't work yet
-/*
-void glutCheckLoop()
+char inMainLoop = 0;
+char finished = 0;
+
+void internalCheckLoop()
 {
-	[myApp runOnce];
+	NSEvent *event;
 	
+//	[myApp runOnce]; // ???
+	
+	pool = [NSAutoreleasePool new];
+	
+	if (updatePending || gIdle != NULL || !inMainLoop) // If it is, then the setNeedsDisplay below has been called and we will get an update event - but must not block!
+	// (If there was an update coming I think it should not block, but at least this works.)
+		event = [myApp nextEventMatchingMask: NSAnyEventMask
+						untilDate: [NSDate dateWithTimeIntervalSinceNow: 0.0]
+						inMode: NSDefaultRunLoopMode
+						dequeue: true
+						];
+	else
+		event = [myApp nextEventMatchingMask: NSAnyEventMask
+						untilDate: [NSDate distantFuture]
+						inMode: NSDefaultRunLoopMode
+						dequeue: true
+						];
+	
+	[myApp sendEvent: event];
+	[myApp updateWindows];
+
 	if (gIdle != NULL)
 		if (!updatePending)
 			gIdle();
 	
+	// Did not help?
+	if (updatePending)
+		[theView setNeedsDisplay: YES];
 	[pool release];
-	pool = [NSAutoreleasePool new];
 }
-*/
+
+void glutCheckLoop()
+{
+	inMainLoop = 0;
+	
+//	if (!inMainLoop) [window setContentView: view]; // Why isn't this a job for window creation???
+	if (!finished)
+	{
+		[myApp finishLaunching];
+		finished = 1;
+	}
+
+//	[NSOpenGLContext clearCurrentContext];
+//	[m_context makeCurrentContext];
+//	[m_context setView: theView];
+	[m_context flushBuffer];
+
+	internalCheckLoop();
+
+	[m_context setView: theView];
+//	[m_context makeCurrentContext];
+}
+
+void glutMainLoop()
+{
+	inMainLoop = 1;
+
+//	[window setContentView: view];
+	[myApp finishLaunching];
+	finished = 1;
+
+	while (gRunning)
+	{
+		internalCheckLoop();
+	}
+	inMainLoop = 0;
+}
+
+// END OF MAIN LOOP
+
 
 void glutTimerFunc(int millis, void (*func)(int arg), int arg)
 {
@@ -896,6 +1020,7 @@ void glutMouseFunc(void (*func)(int button, int state, int x, int y))
 // You can safely skip this
 void glutSwapBuffers()
 {
+//	[m_context flushBuffer];
 	glFlush();
 }
 
@@ -905,6 +1030,9 @@ int glutGet(int type)
 	
 	switch (type)
 	{
+	case GLUT_QUIT_FLAG:
+		return !gRunning;
+		break;
 	case GLUT_WINDOW_WIDTH:
 		return lastWidth;
 		break;
@@ -915,7 +1043,14 @@ int glutGet(int type)
 		gettimeofday(&tv, NULL);
 		return (tv.tv_usec - timeStart.tv_usec) / 1000 + (tv.tv_sec - timeStart.tv_sec)*1000;
 		break;
+	case GLUT_MOUSE_POSITION_X:
+		return gMousePosition.x;
+		break;
+	case GLUT_MOUSE_POSITION_Y:
+		return gMousePosition.y;
+		break;
 	}
+	return 0;
 }
 
 void glutInitDisplayMode(unsigned int mode)
@@ -942,7 +1077,9 @@ void glutReshapeWindow(int width, int height)
 	r = [window frame];
 	r.size.width = width;
 	r.size.height = height;
-	[window setFrame: r display: true];
+// Bug fix 150820
+//	[window setFrame: r display: true];
+	[window setContentSize: r.size];
 }
 
 void glutPositionWindow(int x, int y)
@@ -970,6 +1107,11 @@ void glutSetWindowTitle(char *title)
 char glutKeyIsDown(unsigned char c)
 {
 	return gKeymap[(unsigned int)c];
+}
+
+char glutMouseIsDown(unsigned char c)
+{
+	return gButtonPressed[(unsigned int)c];
 }
 
 void glutInitContextVersion(int major, int minor)
@@ -1004,7 +1146,20 @@ void glutWarpPointer(int x, int y)
 	NSRect r;
 	
 	mp.x = 0; mp.y = 0;
-	mp = [window convertBaseToScreen: mp];
+//	mp = [window convertBaseToScreen: mp];
+
+// Deprication hell below:
+//The NSWindow class provides these methods for converting between window local coordinates and screen global coordinates:
+//	¥	convertRectToScreen:
+//	¥	convertRectFromScreen:
+//Use them instead of the deprecated convertBaseToScreen: and convertScreenToBase: methods.
+	NSRect mpmp;
+	mpmp.size.height = 0;
+	mpmp.size.width = 0;
+	mpmp.origin = mp;
+	mpmp = [window convertRectToScreen: mpmp];
+	mp = mpmp.origin;
+
 //	printf("convertBaseToScreen %f %f\n", mp.x, mp.y);
 //	mp1 = [theView convertPoint: mp fromView: NULL];
 //	printf("fromView %f %f\n", mp1.x, mp1.y);
@@ -1093,4 +1248,17 @@ void glutToggleFullScreen()
 		glutExitFullScreen();
 	else
 		glutFullScreen();
+}
+
+void glutExit()
+{
+	gRunning = 0;
+}
+
+// Placeholders
+void glutSetWindow(int win)
+{}
+int glutGetWindow(void)
+{
+	return 0;
 }

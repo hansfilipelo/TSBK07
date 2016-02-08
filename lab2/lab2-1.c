@@ -12,7 +12,7 @@
 // See separate Visual Studio version of my demos.
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
-#include "MicroGlut_Mac/MicroGlut.h"
+#include "mac/MicroGlut.h"
 // Linking hint for Lightweight IDE
 // uses framework Cocoa
 #endif
@@ -20,12 +20,13 @@
 #include <math.h>
 #include "loadobj.h"
 
+#define NULL (void *)0
 #define PI 3.14159265
 
 void OnTimer(int value)
 {
-    glutPostRedisplay();
-    glutTimerFunc(20, &OnTimer, value);
+  glutPostRedisplay();
+  glutTimerFunc(20, &OnTimer, value);
 }
 
 // Globals
@@ -33,26 +34,26 @@ void OnTimer(int value)
 
 GLfloat translMatrix[] =
 {
-    1.0f, 0.0f, 0.0f, 0.5f,
-    0.0f, 1.0f, 0.0f, 0.5f,
-    0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f
+  1.0f, 0.0f, 0.0f, 0.5f,
+  0.0f, 1.0f, 0.0f, 0.5f,
+  0.0f, 0.0f, 1.0f, 0.0f,
+  0.0f, 0.0f, 0.0f, 1.0f
 };
 
 GLfloat rotMatrix[] =
 {
-    1.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, 1.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f
+  1.0f, 0.0f, 0.0f, 0.0f,
+  0.0f, 1.0f, 0.0f, 0.0f,
+  0.0f, 0.0f, 1.0f, 0.0f,
+  0.0f, 0.0f, 0.0f, 1.0f
 };
 
 GLfloat rotMatrixX[] =
 {
-    1.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, 1.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f
+  1.0f, 0.0f, 0.0f, 0.0f,
+  0.0f, 1.0f, 0.0f, 0.0f,
+  0.0f, 0.0f, 1.0f, 0.0f,
+  0.0f, 0.0f, 0.0f, 1.0f
 };
 
 GLfloat phi = 0;
@@ -68,6 +69,7 @@ Model *m;
 // vertex array object
 unsigned int vertexArrayObjID;
 unsigned int bunnyVertexArrayObjID;
+unsigned int bunnyTexCoordBufferObjID;
 unsigned int vertexBufferObjID;
 unsigned int colorBufferObjID;
 unsigned int bunnyVertexBufferObjID;
@@ -76,32 +78,45 @@ unsigned int bunnyNormalBufferObjID;
 
 void init(void)
 {
-	// vertex buffer object, used for uploading the geometry
+  // vertex buffer object, used for uploading the geometry
 
-	dumpInfo(); // Dump driver info to stdout
+  dumpInfo(); // Dump driver info to stdout
 
   // Load Model
-  m = LoadModelPlus("bunny.obj");
+  m = LoadModelPlus("bunnyplus.obj");
 
   // GL inits
   glClearColor(1,1,1,0);
   //glClearColor(0.2,0.2,0.5,0); // Color in buffer upon clear buffer
   glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-	glEnable(GL_DEPTH_TEST);
-	printError("GL inits");
+  glEnable(GL_DEPTH_TEST);
+  printError("GL inits");
 
-	// Load and compile shader
-	program = loadShaders("lab2-1.vert", "lab2-1.frag"); // These are the programs that run on GPU
-	printError("init shader");
+  // Load and compile shader
+  program = loadShaders("lab2-1.vert", "lab2-1.frag"); // These are the programs that run on GPU
+  printError("init shader");
 
-	// Upload geometry to the GPU:
+  // Upload geometry to the GPU:
   glGenVertexArrays(1, &bunnyVertexArrayObjID);
-	glGenBuffers(1, &bunnyVertexBufferObjID);
-	glGenBuffers(1, &bunnyIndexBufferObjID);
-	glGenBuffers(1, &bunnyNormalBufferObjID);
-	printError("glGenBuffers");
+  glGenBuffers(1, &bunnyVertexBufferObjID);
+  glGenBuffers(1, &bunnyIndexBufferObjID);
+  glGenBuffers(1, &bunnyNormalBufferObjID);
+  printError("glGenBuffers");
 
   glBindVertexArray(bunnyVertexArrayObjID);
+
+  // Lab2
+  //--------------
+  glGenBuffers(1, &bunnyTexCoordBufferObjID);
+
+  if (m->texCoordArray != NULL)
+  {
+    glBindBuffer(GL_ARRAY_BUFFER, bunnyTexCoordBufferObjID);
+    glBufferData(GL_ARRAY_BUFFER, m->numVertices*2*sizeof(GLfloat), m->texCoordArray, GL_STATIC_DRAW);
+    glVertexAttribPointer(glGetAttribLocation(program, "inTexCoord"), 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(glGetAttribLocation(program, "inTexCoord"));
+  }
+  // -----------------
 
   // VBO for vertex data
   glBindBuffer(GL_ARRAY_BUFFER, bunnyVertexBufferObjID);
@@ -118,56 +133,56 @@ void init(void)
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bunnyIndexBufferObjID);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, m->numIndices*sizeof(GLuint), m->indexArray, GL_STATIC_DRAW);
 
-	// --------------------------------------
+  // --------------------------------------
 
-	glUniformMatrix4fv(glGetUniformLocation(program, "translMatrix"), 1, GL_TRUE, translMatrix);
+  glUniformMatrix4fv(glGetUniformLocation(program, "translMatrix"), 1, GL_TRUE, translMatrix);
 
-	printError("init arrays");
+  printError("init arrays");
 }
 
 
 void display(void)
 {
-	printError("pre display");
+  printError("pre display");
 
-	// clear the screen (using chosen color earlier)
+  // clear the screen (using chosen color earlier)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// Set rotation matrix
-	phi += PI/50;
-	cosPhi = cos(phi);
-	sinPhi = sin(phi);
-	minSin = -sinPhi;
+  // Set rotation matrix
+  phi += PI/50;
+  cosPhi = cos(phi);
+  sinPhi = sin(phi);
+  minSin = -sinPhi;
 
-	rotMatrix[0] = cosPhi;
-	rotMatrix[5] = cosPhi;
-	rotMatrix[1] = minSin;
-	rotMatrix[4] = sinPhi;
+  rotMatrix[0] = cosPhi;
+  rotMatrix[5] = cosPhi;
+  rotMatrix[1] = minSin;
+  rotMatrix[4] = sinPhi;
 
   rotMatrixX[5] = cosPhi;
   rotMatrixX[6] = minSin;
   rotMatrixX[9] = sinPhi;
   rotMatrixX[10] = cosPhi;
 
-	// Send translMatrix to Vertex
-	glUniformMatrix4fv(glGetUniformLocation(program, "rotMatrix"), 1, GL_TRUE, rotMatrix);
+  // Send translMatrix to Vertex
+  glUniformMatrix4fv(glGetUniformLocation(program, "rotMatrix"), 1, GL_TRUE, rotMatrix);
   glUniformMatrix4fv(glGetUniformLocation(program, "rotMatrixX"), 1, GL_TRUE, rotMatrixX);
 
   glBindVertexArray(bunnyVertexArrayObjID);	// Select VAO
   glDrawElements(GL_TRIANGLES, m->numIndices, GL_UNSIGNED_INT, 0L);
 
-	printError("display");
+  printError("display");
 
-	glutSwapBuffers(); // Swap buffer so that GPU can use the buffer we uploaded to it and we can write to another
+  glutSwapBuffers(); // Swap buffer so that GPU can use the buffer we uploaded to it and we can write to another
 }
 
 int main(int argc, char *argv[])
 {
-	glutInit(&argc, argv);
-	glutInitContextVersion(3, 2);
-	glutCreateWindow("Bunny");
-	glutDisplayFunc(display);
-	init ();
-	OnTimer(0);
-	glutMainLoop();
+  glutInit(&argc, argv);
+  glutInitContextVersion(3, 2);
+  glutCreateWindow("Bunny");
+  glutDisplayFunc(display);
+  init ();
+  OnTimer(0);
+  glutMainLoop();
 }

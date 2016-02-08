@@ -62,12 +62,21 @@
 // 130924: Fixed a bug in mat3tomat4.
 // 131014: Added TransposeMat3 (although I doubt its importance)
 // 140213: Corrected mat3tomat4. (Were did the correction in 130924 go?)
+// 151210: Added printMat4 and printVec3.
 
 // You may use VectorUtils as you please. A reference to the origin is appreciated
 // but if you grab some snippets from it without reference... no problem.
 
 
 #include "VectorUtils3.h"
+
+// VS doesn't define NAN properly
+#ifdef WIN32
+    #ifndef NAN
+        static const unsigned long __nan[2] = {0xffffffff, 0x7fffffff};
+        #define NAN (*(const float *) __nan)
+    #endif
+#endif
 
 char transposed = 0;
 
@@ -89,6 +98,50 @@ char transposed = 0;
 		v.z = z;
 		return v;
 	}
+
+// Modern C doesn't need this, but Visual STudio insists on old-fashioned C and needs this.
+	mat3 SetMat3(GLfloat p0, GLfloat p1, GLfloat p2, GLfloat p3, GLfloat p4, GLfloat p5, GLfloat p6, GLfloat p7, GLfloat p8)
+	{
+		mat3 m;
+		m.m[0] = p0;
+		m.m[1] = p1;
+		m.m[2] = p2;
+		m.m[3] = p3;
+		m.m[4] = p4;
+		m.m[5] = p5;
+		m.m[6] = p6;
+		m.m[7] = p7;
+		m.m[8] = p8;
+		return m;
+	}
+
+// Like above; Modern C doesn't need this, but Visual STudio insists on old-fashioned C and needs this.
+	mat4 SetMat4(GLfloat p0, GLfloat p1, GLfloat p2, GLfloat p3,
+				GLfloat p4, GLfloat p5, GLfloat p6, GLfloat p7,
+				GLfloat p8, GLfloat p9, GLfloat p10, GLfloat p11, 
+				GLfloat p12, GLfloat p13, GLfloat p14, GLfloat p15
+				)
+	{
+		mat4 m;
+		m.m[0] = p0;
+		m.m[1] = p1;
+		m.m[2] = p2;
+		m.m[3] = p3;
+		m.m[4] = p4;
+		m.m[5] = p5;
+		m.m[6] = p6;
+		m.m[7] = p7;
+		m.m[8] = p8;
+		m.m[9] = p9;
+		m.m[10] = p10;
+		m.m[11] = p11;
+		m.m[12] = p12;
+		m.m[13] = p13;
+		m.m[14] = p14;
+		m.m[15] = p15;
+		return m;
+	}
+
 
 	// vec3 operations
 	// vec4 operations can easily be added but I havn't seen much need for them.
@@ -226,9 +279,9 @@ char transposed = 0;
 		m = IdentityMatrix();
 		m.m[0] = cos(a);
 		if (transposed)
-			m.m[8] = -sin(a);
+			m.m[8] = sin(a); // Was flipped
 		else
-			m.m[8] = sin(a);
+			m.m[8] = -sin(a);
 		m.m[2] = -m.m[8]; //sin(a);
 		m.m[10] = m.m[0]; //cos(a);
 		return m;
@@ -614,16 +667,21 @@ void SetTransposed(char t)
 mat4 lookAtv(vec3 p, vec3 l, vec3 v)
 {
 	vec3 n, u;
+	mat4 rot, trans;
 
 	n = Normalize(VectorSub(p, l));
 	u = Normalize(CrossProduct(v, n));
 	v = CrossProduct(n, u);
 
-	mat4 rot = {{ u.x, u.y, u.z, 0,
+//	rot = {{ u.x, u.y, u.z, 0,
+//                      v.x, v.y, v.z, 0,
+//                      n.x, n.y, n.z, 0,
+//                      0,   0,   0,   1 }};
+// VS friendly version:
+	rot = SetMat4(u.x, u.y, u.z, 0,
                       v.x, v.y, v.z, 0,
                       n.x, n.y, n.z, 0,
-                      0,   0,   0,   1 }};
-	mat4 trans;
+                      0,   0,   0,   1);
 	trans = T(-p.x, -p.y, -p.z);
 	return Mult(rot, trans);
 }
@@ -699,6 +757,24 @@ mat4 frustum(float left, float right, float bottom, float top,
     return matrix;
 }
 
+// Not tested!
+mat4 ortho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near, GLfloat far)
+{
+        float a = 2.0f / (right - left);
+        float b = 2.0f / (top - bottom);
+        float c = -2.0f / (far - near);
+
+        float tx = - (right + left)/(right - left);
+        float ty = - (top + bottom)/(top - bottom);
+        float tz = - (far + near)/(far - near);
+
+        mat4 o = SetMat4(
+            a, 0, 0, tx,
+            0, b, 0, ty,
+            0, 0, c, tz,
+            0, 0, 0, 1);
+        return o;
+}
 
 // The code below is based on code from:
 // http://www.dr-lex.be/random/matrix_inv.html
@@ -708,7 +784,8 @@ mat4 frustum(float left, float right, float bottom, float top,
 mat3 InvertMat3(mat3 in)
 {
 	float a11, a12, a13, a21, a22, a23, a31, a32, a33;
-	mat3 out;
+	mat3 out, nanout;
+	float DET;
 	
 	// Copying to internal variables both clarify the code and
 	// buffers data so the output may be identical to the input!
@@ -721,7 +798,7 @@ mat3 InvertMat3(mat3 in)
 	a31 = in.m[6];
 	a32 = in.m[7];
 	a33 = in.m[8];
-	float DET = a11*(a33*a22-a32*a23)-a21*(a33*a12-a32*a13)+a31*(a23*a12-a22*a13);
+	DET = a11*(a33*a22-a32*a23)-a21*(a33*a12-a32*a13)+a31*(a23*a12-a22*a13);
 	if (DET != 0)
 	{
 		out.m[0] = (a33*a22-a32*a23)/DET;
@@ -736,9 +813,9 @@ mat3 InvertMat3(mat3 in)
 	}
 	else
 	{
-		mat3 nanout = {{ NAN, NAN, NAN,
+		nanout = SetMat3(NAN, NAN, NAN,
 								NAN, NAN, NAN,
-								NAN, NAN, NAN}};
+								NAN, NAN, NAN);
 		out = nanout;
 	}
 	
@@ -751,7 +828,8 @@ mat3 InvertMat3(mat3 in)
 mat3 InverseTranspose(mat4 in)
 {
 	float a11, a12, a13, a21, a22, a23, a31, a32, a33;
-	mat3 out;
+	mat3 out, nanout;
+	float DET;
 	
 	// Copying to internal variables
 	a11 = in.m[0];
@@ -763,7 +841,7 @@ mat3 InverseTranspose(mat4 in)
 	a31 = in.m[8];
 	a32 = in.m[9];
 	a33 = in.m[10];
-	float DET = a11*(a33*a22-a32*a23)-a21*(a33*a12-a32*a13)+a31*(a23*a12-a22*a13);
+	DET = a11*(a33*a22-a32*a23)-a21*(a33*a12-a32*a13)+a31*(a23*a12-a22*a13);
 	if (DET != 0)
 	{
 		out.m[0] = (a33*a22-a32*a23)/DET;
@@ -778,9 +856,9 @@ mat3 InverseTranspose(mat4 in)
 	}
 	else
 	{
-			mat3 nanout = {{ NAN, NAN, NAN,
+		nanout = SetMat3(NAN, NAN, NAN,
 								NAN, NAN, NAN,
-								NAN, NAN, NAN}};
+								NAN, NAN, NAN);
 		out = nanout;
 	}
 
@@ -891,3 +969,24 @@ mat4 InvertMat4(mat4 a)
 	b.m[15]=(k*u-l*B+o*A)*q;
 	return b;
 };
+
+
+// Two convenient printing functions suggested by Christian Luckey 2015.
+void printMat4(mat4 m)
+{
+	unsigned int i;
+//	printf(" _______________________________________________________________\n");
+	printf(" ---------------------------------------------------------------\n");
+	for (i = 0; i < 4; i++)
+	{
+		int n = i * 4;
+		printf("| %11.5f\t| %11.5f\t| %11.5f\t| %11.5f\t|\n",
+			m.m[n], m.m[n+1], m.m[n+2], m.m[n+3]);
+	}
+	printf(" ---------------------------------------------------------------\n");
+}
+
+void printVec3(vec3 in) 
+{
+	printf("(%f, %f, %f)\n", in.x, in.y, in.z);
+}
