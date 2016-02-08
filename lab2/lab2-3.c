@@ -20,8 +20,18 @@
 #include <math.h>
 #include "loadobj.h"
 #include "LoadTGA.h"
+#include "VectorUtils3.h"
 
 #define PI 3.14159265
+
+#define near 1.0
+#define far 30.0
+#define right 0.5
+#define left -0.5
+#define top 0.5
+#define bottom -0.5
+
+// ---------------
 
 void OnTimer(int value)
 {
@@ -32,28 +42,14 @@ void OnTimer(int value)
 // Globals
 // Data would normally be read from files
 
-GLfloat translMatrix[] =
-{
-  1.0f, 0.0f, 0.0f, 0.5f,
-  0.0f, 1.0f, 0.0f, 0.5f,
-  0.0f, 0.0f, 1.0f, 0.0f,
-  0.0f, 0.0f, 0.0f, 1.0f
-};
+mat4 transformMatrix;
 
-GLfloat rotMatrix[] =
+GLfloat projectionMatrix[] =
 {
-  1.0f, 0.0f, 0.0f, 0.0f,
-  0.0f, 1.0f, 0.0f, 0.0f,
-  0.0f, 0.0f, 1.0f, 0.0f,
-  0.0f, 0.0f, 0.0f, 1.0f
-};
-
-GLfloat rotMatrixX[] =
-{
-  1.0f, 0.0f, 0.0f, 0.0f,
-  0.0f, 1.0f, 0.0f, 0.0f,
-  0.0f, 0.0f, 1.0f, 0.0f,
-  0.0f, 0.0f, 0.0f, 1.0f
+  2.0f*near/(right-left), 0.0f, (right+left)/(right-left), 0.0f,
+  0.0f, 2.0f*near/(top-bottom), (top+bottom)/(top-bottom), 0.0f,
+  0.0f, 0.0f, -(far + near)/(far - near), -2*far*near/(far - near),
+  0.0f, 0.0f, -1.0f, 0.0f
 };
 
 GLfloat phi = 0;
@@ -146,7 +142,7 @@ void init(void)
 
   // --------------------------------------
 
-  glUniformMatrix4fv(glGetUniformLocation(program, "translMatrix"), 1, GL_TRUE, translMatrix);
+  glUniformMatrix4fv(glGetUniformLocation(program, "projectionMatrix"), 1, GL_TRUE, projectionMatrix);
 
   printError("init arrays");
 }
@@ -161,24 +157,14 @@ void display(void)
 
   // Set rotation matrix
   phi += PI/50;
-  cosPhi = cos(phi);
-  sinPhi = sin(phi);
-  minSin = -sinPhi;
 
-  rotMatrix[0] = cosPhi;
-  rotMatrix[5] = cosPhi;
-  rotMatrix[1] = minSin;
-  rotMatrix[4] = sinPhi;
-
-  rotMatrixX[5] = cosPhi;
-  rotMatrixX[6] = minSin;
-  rotMatrixX[9] = sinPhi;
-  rotMatrixX[10] = cosPhi;
+  mat4 translation = T(0,0,-3);
+  mat4 rotations = Mult(Ry(phi),Mult(Rx(phi), Rz(phi)));
+  transformMatrix = Mult(translation,rotations);
 
   // Send translMatrix to Vertex
-  glUniformMatrix4fv(glGetUniformLocation(program, "rotMatrix"), 1, GL_TRUE, rotMatrix);
-  glUniformMatrix4fv(glGetUniformLocation(program, "rotMatrixX"), 1, GL_TRUE, rotMatrixX);
-  glUniform1f(glGetUniformLocation(program, "time_variable"), cosPhi); // Variate shader
+  glUniform1f(glGetUniformLocation(program, "time_variable"), cos(phi)); // Variate shader
+  glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  transformMatrix.m); // Variate shader
 
   glBindVertexArray(bunnyVertexArrayObjID);	// Select VAO
   glDrawElements(GL_TRIANGLES, m->numIndices, GL_UNSIGNED_INT, 0L);

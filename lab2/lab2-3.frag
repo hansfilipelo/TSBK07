@@ -2,6 +2,7 @@
 
 in vec3 normal;
 in vec2 outTexCoord;
+
 uniform sampler2D tex;
 uniform float time_variable;
 

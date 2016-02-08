@@ -2,7 +2,7 @@ UNAME_S=$(shell uname -s)
 CCFLAGS = -Wall -std=c99 -DGL_GLEXT_PROTOTYPES
 LDFLAGS = -lm
 EXEC=lab2-3
-SOURCES=$(EXEC).c loadobj.c GL_utilities.c LoadTGA.c
+SOURCES=$(EXEC).c loadobj.c GL_utilities.c LoadTGA.c VectorUtils3.c
 MGLUT =
 
 ifeq ($(UNAME_S),Linux)
@@ -15,7 +15,7 @@ ifeq ($(UNAME_S),Darwin)
 	MGLUT = mac/MicroGlut.m
 endif
 
-all : clean $(EXEC)
+all : $(EXEC)
 
 $(EXEC): $(SOURCES)
 	gcc $(CCFLAGS) -o $(EXEC) $(SOURCES) $(MGLUT) $(LDFLAGS)

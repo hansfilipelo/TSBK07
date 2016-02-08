@@ -123,7 +123,7 @@ void init(void)
   glUniform1i(glGetUniformLocation(program, "tex"), 0); // Create texture unit
   LoadTGATextureSimple("rutor.tga", &tex); // Load texture to texture unit
   glBindTexture(GL_TEXTURE_2D, tex); // Bind texture unit
-  glActiveTexture(GL_TEXTURE0); // Activate texture unit 0 (in case we have multiple textures, this is nessecary)
+  glActiveTexture(GL_TEXTURE0); // Activate texture unit 0 (in case we have multiple textures, this is nessecary) 
 
   // Create a texture unit
 
