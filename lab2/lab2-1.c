@@ -19,8 +19,8 @@
 #include "GL_utilities.h"
 #include <math.h>
 #include "loadobj.h"
+#include "LoadTGA.h"
 
-#define NULL (void *)0
 #define PI 3.14159265
 
 void OnTimer(int value)
@@ -63,6 +63,7 @@ GLfloat minSin;
 
 // Reference to shader program
 GLuint program;
+GLuint tex;
 
 Model *m;
 
@@ -111,11 +112,17 @@ void init(void)
 
   if (m->texCoordArray != NULL)
   {
+    // Load model
     glBindBuffer(GL_ARRAY_BUFFER, bunnyTexCoordBufferObjID);
     glBufferData(GL_ARRAY_BUFFER, m->numVertices*2*sizeof(GLfloat), m->texCoordArray, GL_STATIC_DRAW);
     glVertexAttribPointer(glGetAttribLocation(program, "inTexCoord"), 2, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(glGetAttribLocation(program, "inTexCoord"));
   }
+
+  // Load texture into uniform in fragment shader
+  glUniform1i(glGetUniformLocation(program, "tex"), 0);
+  LoadTGATextureSimple("rutor.tga", &tex);
+
   // -----------------
 
   // VBO for vertex data
@@ -167,6 +174,7 @@ void display(void)
   // Send translMatrix to Vertex
   glUniformMatrix4fv(glGetUniformLocation(program, "rotMatrix"), 1, GL_TRUE, rotMatrix);
   glUniformMatrix4fv(glGetUniformLocation(program, "rotMatrixX"), 1, GL_TRUE, rotMatrixX);
+  glUniform1f(glGetUniformLocation(program, "time_variable"), phi);
 
   glBindVertexArray(bunnyVertexArrayObjID);	// Select VAO
   glDrawElements(GL_TRIANGLES, m->numIndices, GL_UNSIGNED_INT, 0L);
