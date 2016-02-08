@@ -21,4 +21,4 @@ $(EXEC): $(SOURCES)
 	gcc $(CCFLAGS) -o $(EXEC) $(SOURCES) $(MGLUT) $(LDFLAGS)
 
 clean :
-	rm -f $(EXEC)
+	rm -f $(EXEC) *~
