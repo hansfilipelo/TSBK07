@@ -9,6 +9,6 @@ out vec4 out_Color;
 
 void main(void)
 {
-	vec2 something = outTexCoord * cos(time_variable); // Just scales the mapping coordinates
+	vec2 something = outTexCoord * time_variable; // Just scales the mapping coordinates
 	out_Color = texture(tex, something);
 }

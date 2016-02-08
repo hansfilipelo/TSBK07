@@ -112,7 +112,7 @@ void init(void)
 
   if (m->texCoordArray != NULL)
   {
-    // Load model
+    // Load model and its texture mapping coordinates
     glBindBuffer(GL_ARRAY_BUFFER, bunnyTexCoordBufferObjID);
     glBufferData(GL_ARRAY_BUFFER, m->numVertices*2*sizeof(GLfloat), m->texCoordArray, GL_STATIC_DRAW);
     glVertexAttribPointer(glGetAttribLocation(program, "inTexCoord"), 2, GL_FLOAT, GL_FALSE, 0, 0);
@@ -120,8 +120,12 @@ void init(void)
   }
 
   // Load texture into uniform in fragment shader
-  glUniform1i(glGetUniformLocation(program, "tex"), 0);
-  LoadTGATextureSimple("rutor.tga", &tex);
+  glUniform1i(glGetUniformLocation(program, "tex"), 0); // Create texture unit
+  LoadTGATextureSimple("rutor.tga", &tex); // Load texture to texture unit
+  glBindTexture(GL_TEXTURE_2D, tex); // Bind texture unit
+  glActiveTexture(GL_TEXTURE0); // Activate texture unit 0 (in case we have multiple textures, this is nessecary)
+
+  // Create a texture unit
 
   // -----------------
 
@@ -174,7 +178,7 @@ void display(void)
   // Send translMatrix to Vertex
   glUniformMatrix4fv(glGetUniformLocation(program, "rotMatrix"), 1, GL_TRUE, rotMatrix);
   glUniformMatrix4fv(glGetUniformLocation(program, "rotMatrixX"), 1, GL_TRUE, rotMatrixX);
-  glUniform1f(glGetUniformLocation(program, "time_variable"), phi);
+  glUniform1f(glGetUniformLocation(program, "time_variable"), cosPhi); // Variate shader
 
   glBindVertexArray(bunnyVertexArrayObjID);	// Select VAO
   glDrawElements(GL_TRIANGLES, m->numIndices, GL_UNSIGNED_INT, 0L);
