@@ -117,7 +117,7 @@ void init(void)
 
   // Load texture into uniform in fragment shader
   glUniform1i(glGetUniformLocation(program, "tex"), 0); // Create texture unit
-  LoadTGATextureSimple("rutor.tga", &tex); // Load texture to texture unit
+  LoadTGATextureSimple("grass.tga", &tex); // Load texture to texture unit
   glBindTexture(GL_TEXTURE_2D, tex); // Bind texture unit
   glActiveTexture(GL_TEXTURE0); // Activate texture unit 0 (in case we have multiple textures, this is nessecary)
 
@@ -163,7 +163,6 @@ void display(void)
   transformMatrix = Mult(translation,rotations);
 
   // Send translMatrix to Vertex
-  glUniform1f(glGetUniformLocation(program, "time_variable"), cos(phi)); // Variate shader
   glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  transformMatrix.m); // Variate shader
 
   glBindVertexArray(bunnyVertexArrayObjID);	// Select VAO

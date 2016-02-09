@@ -11,8 +11,20 @@ Made it scale with cos(t)
 
 **Can we modify how we access the texture? How?**
 
-
+	
 
 **Why can't we just pass the texture object to the shader? There is a specific reason for this, a limited resource. What?**
 
 Memory bandwidth. If we create a reference to the texture and then use this reference to refer to the uploaded shader then we can save bandwidth since we are not uploading the texture to the GPU over and over again. 
+
+## 2-3 
+
+**How did you move the bunny to get it in view?**
+
+Translated it -3 in Z-direction.
+
+## 2-4
+
+**Given a certain vector for v, is there some place you can't place the camera?**
+
+Nicht?
