@@ -11,11 +11,12 @@
 // Should work as is on Linux and Mac. MS Windows needs GLEW or glee.
 // See separate Visual Studio version of my demos.
 #ifdef __APPLE__
-#include <OpenGL/gl3.h>
-#include "mac/MicroGlut.h"
-// Linking hint for Lightweight IDE
-// uses framework Cocoa
+  #include <OpenGL/gl3.h>
+  #include "mac/MicroGlut.h"
+#elif defined __linux__
+  #include "Linux/MicroGlut.h"
 #endif
+
 #include "GL_utilities.h"
 #include <math.h>
 #include "loadobj.h"
@@ -123,7 +124,7 @@ void init(void)
   glUniform1i(glGetUniformLocation(program, "tex"), 0); // Create texture unit
   LoadTGATextureSimple("rutor.tga", &tex); // Load texture to texture unit
   glBindTexture(GL_TEXTURE_2D, tex); // Bind texture unit
-  glActiveTexture(GL_TEXTURE0); // Activate texture unit 0 (in case we have multiple textures, this is nessecary) 
+  glActiveTexture(GL_TEXTURE0); // Activate texture unit 0 (in case we have multiple textures, this is nessecary)
 
   // Create a texture unit
 
