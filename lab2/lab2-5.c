@@ -11,11 +11,12 @@
 // Should work as is on Linux and Mac. MS Windows needs GLEW or glee.
 // See separate Visual Studio version of my demos.
 #ifdef __APPLE__
-#include <OpenGL/gl3.h>
-#include "mac/MicroGlut.h"
-// Linking hint for Lightweight IDE
-// uses framework Cocoa
+  #include <OpenGL/gl3.h>
+  #include "mac/MicroGlut.h"
+#elif defined __linux__
+  #include "Linux/MicroGlut.h"
 #endif
+
 #include "GL_utilities.h"
 #include <math.h>
 #include "loadobj.h"
@@ -155,6 +156,7 @@ void display(void)
 
   // clear the screen (using chosen color earlier)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearColor(1,1,1,0);
 
   // Set rotation matrix
   phi = ( phi < 2*PI ) ? phi+PI/50 : phi-2*PI+PI/50;

@@ -11,7 +11,7 @@ ifeq ($(UNAME_S),Linux)
 	LDFLAGS += -lGL -lX11 -lXext
 	MGLUT = Linux/MicroGlut.c
 	OBJS += $(MGLUT:.c=.o)
-	INCLUDES += -ILinux
+	INCLUDES +=-ILinux
 endif
 
 ifeq ($(UNAME_S),Darwin)
@@ -27,7 +27,7 @@ $(EXEC): $(OBJS)
 	gcc $(CCFLAGS) -o $@ $(OBJS) $(INCLUDES) $(LDFLAGS)
 
 ./%.o : ./%.c
-	gcc $(CCFLAGS) -c -o $@ $< $(INCLUDES)
+	gcc $(CCFLAGS) $(INCLUDES) -c -o $@ $<
 
 ./%.o : ./%.m
 	gcc $(CCFLAGS) -c -o $@ $< $(INCLUDES)
