@@ -15,7 +15,6 @@ extern "C" {
 		#include <GL/gl.h>
 	#endif
 #endif
-//#include "MicroGlut.h"
 
 
 void printError(const char *functionName);
