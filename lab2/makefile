@@ -26,10 +26,10 @@ all : $(EXEC)
 $(EXEC): $(OBJS)
 	gcc $(CCFLAGS) -o $@ $(OBJS) $(INCLUDES) $(LDFLAGS)
 
-./%.o : ./%.c
+%.o : %.c %.h
 	gcc $(CCFLAGS) $(INCLUDES) -c -o $@ $<
 
-./%.o : ./%.m
+%.o : %.m %.h
 	gcc $(CCFLAGS) -c -o $@ $< $(INCLUDES)
 
 clean :
