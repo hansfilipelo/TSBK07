@@ -1,7 +1,7 @@
 UNAME_S=$(shell uname -s)
 CCFLAGS = -Wall -std=c99 -DGL_GLEXT_PROTOTYPES
 LDFLAGS = -lm
-EXEC=lab2-5
+EXEC=lab2-7
 SOURCES = $(EXEC).c loadobj.c GL_utilities.c LoadTGA.c VectorUtils3.c
 INCLUDES =
 MGLUT =
