@@ -18,7 +18,7 @@ void main(void)
 
 	gl_Position = projectionMatrix * lookAtMatrix * transformMatrix * vec4(in_Position, 1.0);
 
-	vec3 temp_normal = mat3(transformMatrix) * in_Normal;
+	vec3 temp_normal = mat3(lookAtMatrix) * in_Normal;
 	shade = dot(normalize(temp_normal),light);
 	shading = vec3(shade);
 

@@ -133,7 +133,7 @@ void display(void)
   vec3 upVector = {0,1,0};
 
   mat4 translation = T(trans.x,trans.y,trans.z);
-  mat4 rotations = IdentityMatrix(); //Mult(Ry(phi),Mult(Rx(phi), Rz(phi)));
+  mat4 rotations = Mult(Ry(phi),Mult(Rx(phi), Rz(phi)));
 
   mat4 lookAtMatrix = lookAtv(cameraLocation,lookAtPoint,upVector);
   transformMatrix = Mult(translation,rotations);

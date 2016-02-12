@@ -1,7 +1,7 @@
 UNAME_S=$(shell uname -s)
 SRC_FOLDER=src
 
-EXEC=lab3
+EXEC=lab3-1
 SOURCES = $(SRC_FOLDER)/$(EXEC).c $(wildcard common/*.c)
 OBJS = $(SOURCES:.c=.o)
 

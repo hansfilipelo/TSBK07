@@ -32,7 +32,7 @@
 #define PI 3.14159265
 
 #define near 1.0
-#define far 30.0
+#define far 100.0
 #define right 0.5
 #define left -0.5
 #define top 0.5
@@ -69,8 +69,10 @@ GLfloat minSin;
 GLuint program;
 GLuint tex;
 
-Model *bunny;
-Model *bunny_model2;
+Model *mill;
+Model *wing;
+
+// ----------------------------------------
 
 void init(void)
 {
@@ -79,8 +81,8 @@ void init(void)
   dumpInfo(); // Dump driver info to stdout
 
   // Load Model
-  bunny = LoadModelPlus("models/bunnyplus.obj");
-  bunny_model2 = LoadModelPlus("models/bunnyplus.obj");
+  mill = LoadModelPlus("models/windmill/windmill-walls.obj");
+  wing = LoadModelPlus("models/windmill/blade.obj");
 
   // GL inits
   glClearColor(1,1,1,0);
@@ -89,15 +91,18 @@ void init(void)
   glEnable(GL_DEPTH_TEST);
   printError("GL inits");
 
-    // ------------------------------------
+  // ------------------------------------
   // Load and compile shader
   char* vertex_shader = malloc(MAX_FILE_SIZE);
   char* fragment_shader = malloc(MAX_FILE_SIZE);
 
   // Append correct filename to shaders
-  char* this_file = __FILE__; // File ends with .c, remove
+  char* this_file = __FILE__;
+  /* File ends with .c, 2 chars needs to be
+  removed when appending to shaders which ends with .shader-stage */
   strncat(vertex_shader, this_file, strlen(this_file)-2);
   strncat(fragment_shader, this_file, strlen(this_file)-2);
+  // Append name of shader-stage
   strcat(vertex_shader,".vert");
   strcat(fragment_shader,".frag");
 
@@ -113,6 +118,7 @@ void init(void)
   printError("init arrays");
 }
 
+// ----------------------------------------
 
 void display(void)
 {
@@ -123,42 +129,50 @@ void display(void)
   glClearColor(1,1,1,0);
 
   // Set rotation matrix
-  phi = ( phi < 2*PI ) ? phi+PI/50 : phi-2*PI+PI/50;
+  phi = ( phi < 2*PI ) ? phi+PI/100 : phi-2*PI+PI/100;
 
-  vec3 trans = {1,0,-3};
-  vec3 trans2 = {-1,0,-3};
-  vec3 lookAtPoint = {0,0,-3};
-  vec3 cameraLocation = {3.0f*cos(phi),0.0f,-3+3.0f*sin(phi)};
+  // Translations for windmill
+  mat4 trans_mill = T(0,-5,-30);
+
+  // Translations for wings/blades
+  mat4 trans_wings = T(0,0,-26);
+  mat4 rotation_wings = Ry(PI/2);
+  mat4 trans_wings_up = T(0,1.3,0);
+
+  // Translations for camera
+  vec3 lookAtPoint = {0,0,-30};
+  float radius = 30;
+  vec3 cameraLocation = {radius*sin(phi),0.0f,-30-radius*cos(phi)};
   vec3 upVector = {0,1,0};
 
-  mat4 translation = T(trans.x,trans.y,trans.z);
-  mat4 rotations = Mult(Ry(phi),Mult(Rx(phi), Rz(phi)));
-
   mat4 lookAtMatrix = lookAtv(cameraLocation,lookAtPoint,upVector);
-  transformMatrix = Mult(translation,rotations);
+  transformMatrix = trans_mill;
 
-  // Send translMatrix to Vertex
+  // Draw windmill
   glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  transformMatrix.m);
   // Send lookAt-vector to vertex shader
   glUniformMatrix4fv(glGetUniformLocation(program, "lookAtMatrix"), 1, GL_TRUE,  lookAtMatrix.m);
-
-  DrawModel(bunny, program, "in_Position", "in_Normal", "inTexCoord");
+  DrawModel(mill, program, "in_Position", "in_Normal", "inTexCoord");
 
   // Model 2
-  transformMatrix = T(trans2.x, trans2.y, trans2.z);
-  glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  transformMatrix.m);
-  DrawModel(bunny_model2, program, "in_Position", "in_Normal", "inTexCoord");
+  for (size_t i = 0; i < 4; i++) {
+    transformMatrix = Mult(trans_wings_up, Mult(Rz(phi+i*(PI/2)), Mult(trans_wings, rotation_wings)));
+    glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  transformMatrix.m);
+    DrawModel(wing, program, "in_Position", "in_Normal", "inTexCoord");
+  }
 
   printError("display");
 
   glutSwapBuffers(); // Swap buffer so that GPU can use the buffer we uploaded to it and we can write to another
 }
 
+// ----------------------------------------
+
 int main(int argc, char *argv[])
 {
   glutInit(&argc, argv);
   glutInitContextVersion(3, 2);
-  glutCreateWindow("Bunny");
+  glutCreateWindow("Windmill");
   glutDisplayFunc(display);
   init ();
   OnTimer(0);
