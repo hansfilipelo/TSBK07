@@ -18,6 +18,8 @@
 #endif
 
 #define MAX_FILE_SIZE 255
+/* max file name length on windows using it since a file probably does not
+ have a longer name than this */
 
 #include <math.h>
 #include <string.h>
@@ -90,8 +92,7 @@ void init(void)
     // ------------------------------------
   // Load and compile shader
   char* vertex_shader = malloc(MAX_FILE_SIZE);
-  char* fragment_shader = malloc(MAX_FILE_SIZE); /* max file name length on windows
-  using it since a file probably does not have a longer name than this */
+  char* fragment_shader = malloc(MAX_FILE_SIZE);
 
   // Append correct filename to shaders
   char* this_file = __FILE__; // File ends with .c, remove
