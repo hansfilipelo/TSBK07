@@ -11,15 +11,16 @@
 // Should work as is on Linux and Mac. MS Windows needs GLEW or glee.
 // See separate Visual Studio version of my demos.
 #ifdef __APPLE__
-  #include <OpenGL/gl3.h>
-  #include "../common/mac/MicroGlut.h"
+#include <OpenGL/gl3.h>
+#include "../common/mac/MicroGlut.h"
+#include <ApplicationServices/ApplicationServices.h>
 #elif defined __linux__
-  #include "../common/Linux/MicroGlut.h"
+#include "../common/Linux/MicroGlut.h"
 #endif
 
 #define MAX_FILE_SIZE 255
 /* max file name length on windows using it since a file probably does not
- have a longer name than this */
+have a longer name than this */
 
 #include <math.h>
 #include <string.h>
@@ -80,12 +81,54 @@ vec3 upVector = {0,1,0};
 static const float movement_speed = 0.2;
 vec3 translator;
 
+// Mouse
+
+static const float mouse_speed = 0.05;
+int deltax = 0;
+int deltay = 0;
+
 // ----------------------------------------
 
 void handleMouse(int x, int y)
 {
-  vec3 mouse = {0.001*x, 0.001*y, 0};
-  lookAtPoint = VectorAdd(lookAtPoint, mouse);
+  float window_center_x = glutGet(GLUT_WINDOW_WIDTH)/2;
+  float window_center_y = glutGet(GLUT_WINDOW_HEIGHT)/2;
+
+  deltax = (float)x;
+  deltay = (float)y;
+
+  if((abs((int)x)>50) || (abs((int)y)>50))
+  {
+    deltax = 0;
+    deltay = 0;
+
+    return;
+
+  }
+  /*Fix for quartz issue found at http://stackoverflow.com/questions/10196603/using-cgeventsourcesetlocaleventssuppressioninterval-instead-of-the-deprecated/17547015#17547015
+  */
+  // if mouse wander off too much, warp it back.
+  float dist = 100;
+
+  if(x > window_center_x+dist || x < window_center_x-dist || y < window_center_y+dist || y > window_center_y-dist){
+    #ifdef __APPLE__
+    CGPoint warpPoint = CGPointMake(window_center_x, window_center_y);
+    CGWarpMouseCursorPosition(warpPoint);
+    CGAssociateMouseAndMouseCursorPosition(true);
+    #endif
+    #ifndef __APPLE__
+    glutWarpPointer( window_center_x, window_center_y );
+    #endif
+  }
+}
+
+// --
+
+void yaw(int deltax, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint)
+{
+  vec3 translation_values = VectorSub(*lookAtPoint, *cameraLocation);
+  mat4 translation_matrix = T(translation_values.x, translation_values.y, translation_values.z);
+  *lookAtPoint = MultVec3(Mult(Ry(((float)deltax)*mouse_speed), translation_matrix), *cameraLocation);
 }
 
 
@@ -98,7 +141,9 @@ void init(void)
   dumpInfo(); // Dump driver info to stdout
 
   glutPassiveMotionFunc(&handleMouse); // set up mouse movement.
+  #ifdef __APPLE__
   glutHideCursor();
+  #endif
 
   // Load Model
   mill = LoadModelPlus("models/windmill/windmill-walls.obj");
@@ -188,6 +233,7 @@ void display(void)
   // ---------------------------
   // Movement of camera with keyboard
   handleKeyBoard(&cameraLocation, &lookAtPoint, &upVector, &movement_speed);
+  yaw(deltax, mouse_speed, &cameraLocation, &lookAtPoint);
 
   // ---------------------------
 
