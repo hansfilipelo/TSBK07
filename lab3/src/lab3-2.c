@@ -1,7 +1,6 @@
 // Questions:
 // 1) Why don't we need a buffer to upload translMatrix? Do we need buffers for everything that is not uniform (for example different colors)?
 
-
 // Lab 1-2.
 // This is the same as the first simple example in the course book,
 // but with a few error checks.
@@ -83,27 +82,30 @@ vec3 translator;
 
 // Mouse
 
-static const float mouse_speed = 0.05;
-int deltax = 0;
-int deltay = 0;
+static const float mouse_speed = 0.025;
+float deltax = 0;
+float deltay = 0;
 
 // ----------------------------------------
 
+static float last_x = 0.0;
+static float last_y = 0.0;
+
 void handleMouse(int x, int y)
 {
-  static int last_x = 0.0;
-  static int last_y = 0.0;
 
-  float window_center_x = glutGet(GLUT_WINDOW_WIDTH)/2;
-  float window_center_y = glutGet(GLUT_WINDOW_HEIGHT)/2;
+  int window_center_x = glutGet(GLUT_WINDOW_WIDTH)/2;
+  int window_center_y = glutGet(GLUT_WINDOW_HEIGHT)/2;
 
-  last_x = (float)x - last_x;
-  last_y = (float)y - last_y;
 
-  deltax = last_x;
-  deltay = last_y;
+  deltax = (float)x - last_x;
+  deltay = (float)y - last_y;
 
-  if((abs((int)x)>50) || (abs((int)y)>50))
+  last_x = x;
+  last_y = y;
+
+  //if the mouse does large changes quickly (for example during a warp, ignore the change)
+  if((abs((int)deltax)>50) || (abs((int)deltay)>50))
   {
     deltax = 0;
     deltay = 0;
@@ -117,9 +119,10 @@ void handleMouse(int x, int y)
   /*Fix for quartz issue found at http://stackoverflow.com/questions/10196603/using-cgeventsourcesetlocaleventssuppressioninterval-instead-of-the-deprecated/17547015#17547015
   */
   // if mouse wander off too much, warp it back.
-  float dist = 100;
+  int dist = (window_center_x < window_center_y) ? window_center_x/2: window_center_y/2;
 
-  if(x > window_center_x+dist || x < window_center_x-dist || y < window_center_y+dist || y > window_center_y-dist){
+  if(x > window_center_x+dist || x < window_center_x-dist || y > window_center_y+dist || y < window_center_y-dist){
+
     #ifdef __APPLE__
     CGPoint warpPoint = CGPointMake(window_center_x, window_center_y);
     CGWarpMouseCursorPosition(warpPoint);
@@ -130,16 +133,14 @@ void handleMouse(int x, int y)
     #endif
   }
 }
-
 // --
 
-void yaw(int deltax, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint)
+void yaw(float deltax, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint)
 {
   vec3 translation_values = VectorSub(*lookAtPoint, *cameraLocation);
   mat4 translation_matrix = T(translation_values.x, translation_values.y, translation_values.z);
-  *lookAtPoint = MultVec3(Mult(Ry(((float)deltax)*mouse_speed), translation_matrix), *cameraLocation);
+  *lookAtPoint = MultVec3(Mult(Ry((-(float)deltax)*mouse_speed), translation_matrix), *cameraLocation);
 }
-
 
 // ----------------------------------------
 
@@ -183,13 +184,12 @@ void init(void)
   program = loadShaders(vertex_shader, fragment_shader); // These are the programs that run on GPU
   printError("init shader");
 
-
-
   // --------------------------------------
 
   glUniformMatrix4fv(glGetUniformLocation(program, "projectionMatrix"), 1, GL_TRUE, projectionMatrix);
 
   printError("init arrays");
+
 }
 
 
@@ -217,6 +217,8 @@ void handleKeyBoard(vec3* cameraLocation, vec3* lookAtPoint, vec3* upVector, con
     *cameraLocation = VectorAdd(*cameraLocation, ScalarMult(direction, *movement_speed));
   }
 }
+
+
 
 // ----------------------------------------
 
@@ -263,6 +265,10 @@ void display(void)
   }
 
   printError("display");
+
+  //we need to reset deltas at the end of display.
+  deltax = 0;
+  deltay = 0;
 
   glutSwapBuffers(); // Swap buffer so that GPU can use the buffer we uploaded to it and we can write to another
 }
