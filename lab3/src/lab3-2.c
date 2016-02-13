@@ -91,16 +91,25 @@ int deltay = 0;
 
 void handleMouse(int x, int y)
 {
+  static int last_x = 0.0;
+  static int last_y = 0.0;
+
   float window_center_x = glutGet(GLUT_WINDOW_WIDTH)/2;
   float window_center_y = glutGet(GLUT_WINDOW_HEIGHT)/2;
 
-  deltax = (float)x;
-  deltay = (float)y;
+  last_x = (float)x - last_x;
+  last_y = (float)y - last_y;
+
+  deltax = last_x;
+  deltay = last_y;
 
   if((abs((int)x)>50) || (abs((int)y)>50))
   {
     deltax = 0;
     deltay = 0;
+
+    last_x = (float)x;
+    last_y = (float)y;
 
     return;
 
