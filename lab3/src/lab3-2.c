@@ -77,26 +77,34 @@ Model *wing;
 vec3 cameraLocation = {0,0.0f,0};
 vec3 lookAtPoint = {0,0,-30};
 vec3 upVector = {0,1,0};
-static const float movement_speed = 0.2;
+static const float movement_speed = 0.6;
 vec3 translator;
 
 // Mouse
+static const float mouse_speed = 0.005;
 
-static const float mouse_speed = 0.025;
-float deltax = 0;
-float deltay = 0;
+// ---------------------------
 
-// ----------------------------------------
+void yaw(float deltax, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint)
+{
+  vec3 translation_values = VectorSub(*lookAtPoint, *cameraLocation);
+  mat4 translation_matrix = T(translation_values.x, translation_values.y, translation_values.z);
+  *lookAtPoint = MultVec3(Mult(Ry((-deltax)*mouse_speed), translation_matrix), *cameraLocation);
+}
 
-static float last_x = 0.0;
-static float last_y = 0.0;
+// ---
 
 void handleMouse(int x, int y)
 {
+  // Only initialized once
+  static float last_x = 0.0;
+  static float last_y = 0.0;
+  static float deltax;
+  static float deltay;
+  // End of only initialized once
 
   int window_center_x = glutGet(GLUT_WINDOW_WIDTH)/2;
   int window_center_y = glutGet(GLUT_WINDOW_HEIGHT)/2;
-
 
   deltax = (float)x - last_x;
   deltay = (float)y - last_y;
@@ -113,9 +121,11 @@ void handleMouse(int x, int y)
     last_x = (float)x;
     last_y = (float)y;
 
-    return;
-
   }
+
+  // Do rotation
+  yaw(deltax, mouse_speed, &cameraLocation, &lookAtPoint);
+
   /*Fix for quartz issue found at http://stackoverflow.com/questions/10196603/using-cgeventsourcesetlocaleventssuppressioninterval-instead-of-the-deprecated/17547015#17547015
   */
   // if mouse wander off too much, warp it back.
@@ -132,14 +142,6 @@ void handleMouse(int x, int y)
     glutWarpPointer( window_center_x, window_center_y );
     #endif
   }
-}
-// --
-
-void yaw(float deltax, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint)
-{
-  vec3 translation_values = VectorSub(*lookAtPoint, *cameraLocation);
-  mat4 translation_matrix = T(translation_values.x, translation_values.y, translation_values.z);
-  *lookAtPoint = MultVec3(Mult(Ry((-(float)deltax)*mouse_speed), translation_matrix), *cameraLocation);
 }
 
 // ----------------------------------------
@@ -244,7 +246,6 @@ void display(void)
   // ---------------------------
   // Movement of camera with keyboard
   handleKeyBoard(&cameraLocation, &lookAtPoint, &upVector, &movement_speed);
-  yaw(deltax, mouse_speed, &cameraLocation, &lookAtPoint);
 
   // ---------------------------
 
@@ -265,10 +266,6 @@ void display(void)
   }
 
   printError("display");
-
-  //we need to reset deltas at the end of display.
-  deltax = 0;
-  deltay = 0;
 
   glutSwapBuffers(); // Swap buffer so that GPU can use the buffer we uploaded to it and we can write to another
 }
