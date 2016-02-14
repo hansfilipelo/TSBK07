@@ -81,15 +81,26 @@ static const float movement_speed = 0.6;
 vec3 translator;
 
 // Mouse
-static const float mouse_speed = 0.005;
+static const float mouse_speed = 0.01;
 
 // ---------------------------
 
-void yaw(float deltax, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint)
+void yaw(float deltax, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint, vec3* upVector)
 {
-  vec3 translation_values = VectorSub(*lookAtPoint, *cameraLocation);
-  mat4 translation_matrix = T(translation_values.x, translation_values.y, translation_values.z);
-  *lookAtPoint = MultVec3(Mult(Ry((-deltax)*mouse_speed), translation_matrix), *cameraLocation);
+  vec3 look_at_vector = VectorSub(*lookAtPoint, *cameraLocation);
+  mat4 translation_matrix = T(look_at_vector.x, look_at_vector.y, look_at_vector.z);
+  *lookAtPoint = MultVec3(Mult(ArbRotate(*upVector, -deltax*mouse_speed), translation_matrix), *cameraLocation);
+}
+
+// ---
+
+void pitch(float deltay, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint, vec3* upVector)
+{
+  vec3 look_at_vector = VectorSub(*lookAtPoint, *cameraLocation);
+  mat4 translation_matrix = T(look_at_vector.x, look_at_vector.y, look_at_vector.z);
+  vec3 rotation_axis = ScalarMult(CrossProduct(look_at_vector, *upVector), -1);
+  *lookAtPoint = MultVec3(Mult(ArbRotate(rotation_axis, deltay*mouse_speed), translation_matrix), *cameraLocation);
+  *upVector = Normalize(ScalarMult(CrossProduct(rotation_axis, look_at_vector), -1));
 }
 
 // ---
@@ -113,7 +124,7 @@ void handleMouse(int x, int y)
   last_y = y;
 
   //if the mouse does large changes quickly (for example during a warp, ignore the change)
-  if((abs((int)deltax)>50) || (abs((int)deltay)>50))
+  if((abs((int)deltax)>25) || (abs((int)deltay)>25))
   {
     deltax = 0;
     deltay = 0;
@@ -124,7 +135,8 @@ void handleMouse(int x, int y)
   }
 
   // Do rotation
-  yaw(deltax, mouse_speed, &cameraLocation, &lookAtPoint);
+  yaw(deltax, mouse_speed, &cameraLocation, &lookAtPoint, &upVector);
+  pitch(deltay, mouse_speed, &cameraLocation, &lookAtPoint, &upVector);
 
   /*Fix for quartz issue found at http://stackoverflow.com/questions/10196603/using-cgeventsourcesetlocaleventssuppressioninterval-instead-of-the-deprecated/17547015#17547015
   */
