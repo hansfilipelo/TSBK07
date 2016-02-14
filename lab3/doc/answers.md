@@ -14,3 +14,10 @@ Set the numbers in the vertex shader (which I don't do).
 
 ## 3-2
 
+**What kind of control did you implement?**
+
+FPS-like controls
+
+**Can you make this kind of control in some other way than manipulating a "look-at" matrix?**
+
+You could use transform on the entire world (which is essentially what we do).
