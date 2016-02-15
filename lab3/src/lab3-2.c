@@ -76,31 +76,32 @@ Model *wing;
 
 vec3 cameraLocation = {0,0.0f,0};
 vec3 lookAtPoint = {0,0,-30};
-vec3 upVector = {0,1,0};
+static const vec3 upVector = {0,1,0};
 static const float movement_speed = 0.6;
-vec3 translator;
+
 
 // Mouse
 static const float mouse_speed = 0.01;
 
 // ---------------------------
 
-void yaw(float deltax, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint, vec3* upVector)
+void yaw(float deltax, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVector)
 {
+  // Does yaw
   vec3 look_at_vector = VectorSub(*lookAtPoint, *cameraLocation);
   mat4 translation_matrix = T(look_at_vector.x, look_at_vector.y, look_at_vector.z);
-  *lookAtPoint = MultVec3(Mult(ArbRotate(*upVector, -deltax*mouse_speed), translation_matrix), *cameraLocation);
+  *lookAtPoint = MultVec3(Mult(Ry(-deltax*mouse_speed), translation_matrix), *cameraLocation);
 }
 
 // ---
 
-void pitch(float deltay, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint, vec3* upVector)
+void pitch(float deltay, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVector)
 {
+  // Do pitch
   vec3 look_at_vector = VectorSub(*lookAtPoint, *cameraLocation);
   mat4 translation_matrix = T(look_at_vector.x, look_at_vector.y, look_at_vector.z);
   vec3 rotation_axis = ScalarMult(CrossProduct(look_at_vector, *upVector), -1);
   *lookAtPoint = MultVec3(Mult(ArbRotate(rotation_axis, deltay*mouse_speed), translation_matrix), *cameraLocation);
-  *upVector = Normalize(ScalarMult(CrossProduct(rotation_axis, look_at_vector), -1));
 }
 
 // ---
@@ -144,8 +145,7 @@ void handleMouse(int x, int y)
   int dist = (window_center_x < window_center_y) ? window_center_x/2: window_center_y/2;
 
   if(x > window_center_x+dist || x < window_center_x-dist || y > window_center_y+dist || y < window_center_y-dist){
-
-    #ifdef __APPLE__
+    #ifdef __APPLE__ // Fix for OS X >= 10.10, which MicroGlut does not work with
     CGPoint warpPoint = CGPointMake(window_center_x, window_center_y);
     CGWarpMouseCursorPosition(warpPoint);
     CGAssociateMouseAndMouseCursorPosition(true);
@@ -209,26 +209,30 @@ void init(void)
 
 // ----------------------------------------
 
-void handleKeyBoard(vec3* cameraLocation, vec3* lookAtPoint, vec3* upVector, const float* movement_speed)
+void handleKeyBoard(vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVector, const float* movement_speed)
 {
   // This is the direction the camera is looking
+  vec3 translator;
+  vec3 y_vector = {0, 1, 0};
   vec3 direction = Normalize(VectorSub(*cameraLocation, *lookAtPoint));
+  vec3 temp = {direction.x, 0, direction.z};
+  vec3 projected_direction = Normalize(temp);
 
   if ( glutKeyIsDown('w') ) {
-    *cameraLocation = VectorAdd(*cameraLocation, ScalarMult(direction, -*movement_speed));
+    *cameraLocation = VectorAdd(*cameraLocation, ScalarMult(projected_direction, -*movement_speed));
   }
   if (glutKeyIsDown('d')) {
-    translator = ScalarMult(Normalize(CrossProduct(direction, *upVector)), -*movement_speed);
+    translator = ScalarMult(Normalize(CrossProduct(projected_direction, y_vector)), -*movement_speed);
     *cameraLocation = VectorAdd(*cameraLocation, translator);
     *lookAtPoint = VectorAdd(*lookAtPoint, translator);
   }
   if ( glutKeyIsDown('a') ) {
-    translator = ScalarMult(Normalize(CrossProduct(direction, *upVector)), *movement_speed);
+    translator = ScalarMult(Normalize(CrossProduct(projected_direction, y_vector)), *movement_speed);
     *cameraLocation = VectorAdd(*cameraLocation, translator);
     *lookAtPoint = VectorAdd(*lookAtPoint, translator);
   }
   if ( glutKeyIsDown('s') ) {
-    *cameraLocation = VectorAdd(*cameraLocation, ScalarMult(direction, *movement_speed));
+    *cameraLocation = VectorAdd(*cameraLocation, ScalarMult(projected_direction, *movement_speed));
   }
 }
 
