@@ -9,12 +9,22 @@
 
 // Should work as is on Linux and Mac. MS Windows needs GLEW or glee.
 // See separate Visual Studio version of my demos.
+
+#include<stdio.h>
+#include<stdlib.h>
+
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #include "../common/mac/MicroGlut.h"
 #include <ApplicationServices/ApplicationServices.h>
 #elif defined __linux__
+#define GL_GLEXT_PROTOTYPES
 #include "../common/Linux/MicroGlut.h"
+#include<X11/X.h>
+#include<X11/Xlib.h>
+#include<GL/gl.h>
+#include<GL/glx.h>
+#include<GL/glu.h>
 #endif
 
 #define MAX_FILE_SIZE 255
@@ -123,8 +133,13 @@ void handleMouse(int x, int y)
   static float deltay;
   // End of only initialized once
 
+  #ifdef __APPLE__
   int window_center_x = glutGet(GLUT_WINDOW_WIDTH)/2;
   int window_center_y = glutGet(GLUT_WINDOW_HEIGHT)/2;
+  #elif defined __linux__
+  int window_center_x = 150;
+  int window_center_y = 150;
+  #endif
 
   deltax = (float)x - last_x;
   deltay = (float)y - last_y;
@@ -193,6 +208,9 @@ void init(void)
   // Load and compile shader
   char* vertex_shader = malloc(MAX_FILE_SIZE);
   char* fragment_shader = malloc(MAX_FILE_SIZE);
+  // Initialize to empty string
+  vertex_shader[0] = '\0';
+  fragment_shader[0] = '\0';
 
   // Append correct filename to shaders
   char* this_file = __FILE__;
