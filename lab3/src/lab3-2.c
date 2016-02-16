@@ -97,8 +97,14 @@ void yaw(float deltax, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoin
 
 void pitch(float deltay, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVector)
 {
-  // Do pitch
+  // Evaluate once
+  static const float break_angle = 0.88; // cos(pi/4) = 0.71
+  // End eval once
+
+  // Do pitch if the angle between upVector and look_at_vector isn't too small
   vec3 look_at_vector = VectorSub(*lookAtPoint, *cameraLocation);
+  float dot_product = DotProduct(look_at_vector, *upVector);
+
   mat4 translation_matrix = T(look_at_vector.x, look_at_vector.y, look_at_vector.z);
   vec3 rotation_axis = ScalarMult(CrossProduct(look_at_vector, *upVector), -1);
   *lookAtPoint = MultVec3(Mult(ArbRotate(rotation_axis, deltay*mouse_speed), translation_matrix), *cameraLocation);
@@ -219,7 +225,9 @@ void handleKeyBoard(vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVecto
   vec3 projected_direction = Normalize(temp);
 
   if ( glutKeyIsDown('w') ) {
+    translator = ScalarMult(projected_direction,-*movement_speed);
     *cameraLocation = VectorAdd(*cameraLocation, ScalarMult(projected_direction, -*movement_speed));
+    *lookAtPoint = VectorAdd(*lookAtPoint, translator);
   }
   if (glutKeyIsDown('d')) {
     translator = ScalarMult(Normalize(CrossProduct(projected_direction, y_vector)), -*movement_speed);
@@ -232,7 +240,9 @@ void handleKeyBoard(vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVecto
     *lookAtPoint = VectorAdd(*lookAtPoint, translator);
   }
   if ( glutKeyIsDown('s') ) {
-    *cameraLocation = VectorAdd(*cameraLocation, ScalarMult(projected_direction, *movement_speed));
+    translator = ScalarMult(projected_direction,*movement_speed);
+    *cameraLocation = VectorAdd(*cameraLocation, translator);
+    *lookAtPoint = VectorAdd(*lookAtPoint, translator);
   }
 }
 
