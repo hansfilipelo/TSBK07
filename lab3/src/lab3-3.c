@@ -214,7 +214,7 @@ void init(void)
   glUniformMatrix4fv(glGetUniformLocation(program, "projectionMatrix"), 1, GL_TRUE, projectionMatrix);
 
   glUseProgram(ground_shaders);
-  glUniformMatrix4fv(glGetUniformLocation(program, "projectionMatrix"), 1, GL_TRUE, projectionMatrix);
+  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "projectionMatrix"), 1, GL_TRUE, projectionMatrix);
   glUniform1i(glGetUniformLocation(ground_shaders, "tex"), 0); // Texture unit 0
 	LoadTGATextureSimple("models/grass.tga", &ground_tex); // 5c
 

@@ -9,5 +9,5 @@ out vec4 out_Color;
 
 void main(void)
 {
-	out_Color = texture(tex, outTexCoord);
+	out_Color = vec4(shading, 1.0);
 }
