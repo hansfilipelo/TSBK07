@@ -235,6 +235,8 @@ void init(void)
   glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "projectionMatrix"), 1, GL_TRUE, projectionMatrix);
   glUniform1i(glGetUniformLocation(ground_shaders, "tex"), 0); // Texture unit 0
 	LoadTGATextureSimple("models/grass.tga", &ground_tex); // 5c
+  transformMatrix = IdentityMatrix();
+  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "transformMatrix"), 1, GL_TRUE, transformMatrix.m);
 
   printError("init arrays");
 
@@ -322,8 +324,7 @@ void display(void)
 
   // Draw and texture ground
   glUseProgram(ground_shaders);
-  transformMatrix = T(0,0,0);
-  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "transformMatrix"), 1, GL_TRUE, transformMatrix.m);
+  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "lookAtMatrix"), 1, GL_TRUE, lookAtMatrix.m);
   DrawModel(ground, ground_shaders, "in_Position", "in_Normal", "inTexCoord");
 
   printError("display");
