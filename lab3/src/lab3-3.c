@@ -78,6 +78,7 @@ GLfloat minSin;
 // Reference to shader program
 GLuint program;
 GLuint ground_shaders;
+// Reference to texture
 GLuint ground_tex;
 
 Model *mill;
@@ -324,6 +325,7 @@ void display(void)
 
   // Draw and texture ground
   glUseProgram(ground_shaders);
+  glBindTexture(GL_TEXTURE_2D, ground_tex);
   glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "lookAtMatrix"), 1, GL_TRUE, lookAtMatrix.m);
   DrawModel(ground, ground_shaders, "in_Position", "in_Normal", "inTexCoord");
 
