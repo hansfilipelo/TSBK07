@@ -78,12 +78,15 @@ GLfloat minSin;
 // Reference to shader program
 GLuint program;
 GLuint ground_shaders;
+
 // Reference to texture
 GLuint ground_tex;
+GLuint skybox_tex;
 
 Model *mill;
 Model *wing;
 Model *ground;
+Model *skybox;
 
 // camera
 
@@ -197,6 +200,7 @@ void init(void)
   mill = LoadModelPlus("models/windmill/windmill-walls.obj");
   wing = LoadModelPlus("models/windmill/blade.obj");
   ground = LoadModelPlus("models/ground.obj");
+  skybox = LoadModelPlus("models/skybox.obj");
 
   // GL inits
   glClearColor(1,1,1,0);
@@ -232,12 +236,22 @@ void init(void)
   glUseProgram(program);
   glUniformMatrix4fv(glGetUniformLocation(program, "projectionMatrix"), 1, GL_TRUE, projectionMatrix);
 
+  // Upload stuff for ground
   glUseProgram(ground_shaders);
   glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "projectionMatrix"), 1, GL_TRUE, projectionMatrix);
-  glUniform1i(glGetUniformLocation(ground_shaders, "tex"), 0); // Texture unit 0
-	LoadTGATextureSimple("models/grass.tga", &ground_tex); // 5c
-  transformMatrix = IdentityMatrix();
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, ground_tex);
+  LoadTGATextureSimple("models/grass.tga", &ground_tex); // 5c
+  transformMatrix = T(0, -5.4, 0);
+
   glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "transformMatrix"), 1, GL_TRUE, transformMatrix.m);
+
+  // Upload stuff for skybox
+  glActiveTexture(GL_TEXTURE0+1);
+  glBindTexture(GL_TEXTURE_2D, skybox_tex);
+  LoadTGATextureSimple("models/SkyBox512.tga", &skybox_tex); // 5c
+
 
   printError("init arrays");
 
@@ -309,6 +323,16 @@ void display(void)
   mat4 lookAtMatrix = lookAtv(cameraLocation,lookAtPoint,upVector);
   transformMatrix = trans_mill;
 
+  // Draw skybox
+  glDisable(GL_DEPTH_TEST);
+  glUseProgram(ground_shaders);
+  glBindTexture(GL_TEXTURE_2D, skybox_tex);
+  glUniform1i(glGetUniformLocation(ground_shaders, "tex"), skybox_tex);
+  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "lookAtMatrix"), 1, GL_TRUE, lookAtMatrix.m);
+  DrawModel(skybox, ground_shaders, "in_Position", "in_Normal", "inTexCoord");
+
+
+  glEnable(GL_DEPTH_TEST);
   glUseProgram(program);
   // Draw windmill
   glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  transformMatrix.m);
@@ -325,8 +349,9 @@ void display(void)
 
   // Draw and texture ground
   glUseProgram(ground_shaders);
-  glBindTexture(GL_TEXTURE_2D, ground_tex);
-  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "lookAtMatrix"), 1, GL_TRUE, lookAtMatrix.m);
+
+  glBindTexture(GL_TEXTURE_2D, skybox_tex);
+  glUniform1i(glGetUniformLocation(ground_shaders, "tex"), skybox_tex);
   DrawModel(ground, ground_shaders, "in_Position", "in_Normal", "inTexCoord");
 
   printError("display");
