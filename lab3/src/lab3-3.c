@@ -62,6 +62,12 @@ void OnTimer(int value)
 // Data would normally be read from files
 
 mat4 transformMatrix;
+mat4 trans_wings;
+mat4 trans_wings_up;
+mat4 trans_roof;
+mat4 trans_balcony;
+mat4 trans_mill;
+mat4 trans_teapot;
 
 GLfloat projectionMatrix[] =
 {
@@ -88,8 +94,11 @@ GLuint skybox_tex;
 
 Model *mill;
 Model *wing;
+Model *roof;
+Model *balcony;
 Model *ground;
 Model *skybox;
+Model *teapot;
 
 // camera
 
@@ -123,8 +132,11 @@ void init(void)
   // Load Model
   mill = LoadModelPlus("models/windmill/windmill-walls.obj");
   wing = LoadModelPlus("models/windmill/blade.obj");
+  roof = LoadModelPlus("models/windmill/windmill-roof.obj");
+  balcony = LoadModelPlus("models/windmill/windmill-balcony.obj");
   ground = LoadModelPlus("models/ground.obj");
   skybox = LoadModelPlus("models/skybox.obj");
+  teapot = LoadModelPlus("models/teapot.obj");
 
   // GL inits
   glClearColor(1,1,1,0);
@@ -160,6 +172,14 @@ void init(void)
 
   glUseProgram(program);
   glUniformMatrix4fv(glGetUniformLocation(program, "projectionMatrix"), 1, GL_TRUE, projectionMatrix);
+  // Translations for windmill
+  trans_mill = T(0,-5,-30);
+  trans_teapot = T(-20,-5, -20);
+  trans_roof = T(0, -4, -30);
+  trans_balcony = T(0, -5, -30);
+  glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  trans_mill.m);
+  trans_wings = T(0,0,-26);
+  trans_wings_up = T(4.6, 4.2, -4);
 
   // Upload stuff for ground
   glUseProgram(ground_shaders);
@@ -205,11 +225,7 @@ void display(void)
   phi = ( phi < 2*PI ) ? phi+PI/100 : phi-2*PI+PI/100;
 
   // Translations for wings/blades
-  mat4 trans_wings = T(0,0,-26);
   mat4 rotation_wings = Ry(PI/2);
-  mat4 trans_wings_up = T(0,1.3,0);
-  // Translations for windmill
-  mat4 trans_mill = T(0,-5,-30);
 
   // ---------------------------
   // Movement of camera with keyboard
@@ -217,9 +233,9 @@ void display(void)
 
   // Move skybox after cameraLocation is changed by input handling
   skybox_transform = move_skybox(&cameraLocation);
-  // ---------------------------
-
+  // Also move camera
   mat4 lookAtMatrix = lookAtv(cameraLocation,lookAtPoint,upVector);
+  // ---------------------------
 
 
   glUseProgram(skybox_shaders);
@@ -241,17 +257,29 @@ void display(void)
   glUniform1i(glGetUniformLocation(ground_shaders, "tex"), 0);
   DrawModel(ground, ground_shaders, "in_Position", NULL, "inTexCoord");
 
-
+  // Model program
   glUseProgram(program);
   glUniformMatrix4fv(glGetUniformLocation(program, "lookAtMatrix"), 1, GL_TRUE, lookAtMatrix.m);
+
+  // Draw teapot
+  glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  trans_teapot.m);
+  DrawModel(teapot, program, "in_Position", "in_Normal", NULL);
+
+  // Draw roof
+  glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  trans_roof.m);
+  DrawModel(roof, program, "in_Position", "in_Normal", NULL);
+
+  // Draw balcony
+  glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  trans_balcony.m);
+  DrawModel(balcony, program, "in_Position", "in_Normal", NULL);
+
   // Draw windmill
-  transformMatrix = trans_mill;
-  glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  transformMatrix.m);
+  glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  trans_mill.m);
   DrawModel(mill, program, "in_Position", "in_Normal", NULL);
 
   // Model 2
   for (size_t i = 0; i < 4; i++) {
-    transformMatrix = Mult(trans_wings_up, Mult(Rz(phi+i*(PI/2)), Mult(trans_wings, rotation_wings)));
+    transformMatrix = Mult(trans_wings_up, Mult(trans_wings, Rx(phi+i*(PI/2))));
     glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  transformMatrix.m);
     DrawModel(wing, program, "in_Position", "in_Normal", NULL);
   }

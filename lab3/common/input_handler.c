@@ -117,5 +117,5 @@ static void pitch(float deltay, float mouse_speed, vec3* cameraLocation, vec3* l
 
 mat4 move_skybox(vec3* cameraLocation)
 {
-  return T(cameraLocation->x, cameraLocation->y-0.1, cameraLocation->z);
+  return T(cameraLocation->x, cameraLocation->y-0.2, cameraLocation->z);
 }
