@@ -22,8 +22,9 @@
 void handle_keyboard(vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVector, const float* movement_speed);
 
 void handle_mouse(int x, int y, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVector);
-
 static void yaw(float deltax, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVector);
 static void pitch(float deltay, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVector);
+
+mat4 move_skybox(vec3* skybox_location, vec3* cameraLocation);
 
 #endif // INPUT_HANDLER_H

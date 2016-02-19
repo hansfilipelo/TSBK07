@@ -96,6 +96,8 @@ vec3 cameraLocation = {0,0.0f,0};
 vec3 lookAtPoint = {0,0,-30};
 static const vec3 upVector = {0,1,0};
 static const float movement_speed = 0.6;
+mat4 skybox_transform;
+vec3 skybox_location = {0, 0, 0};
 
 
 // Mouse
@@ -164,15 +166,13 @@ void init(void)
 
   glActiveTexture(GL_TEXTURE0);
   LoadTGATextureSimple("models/grass.tga", &ground_tex); // 5c
-  //glBindTexture(GL_TEXTURE_2D, ground_tex);
   transformMatrix = T(0, -5.4, 0);
-
   glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "transformMatrix"), 1, GL_TRUE, transformMatrix.m);
 
   // Upload stuff for skybox
   glActiveTexture(GL_TEXTURE1);
   LoadTGATextureSimple("models/SkyBox512.tga", &skybox_tex); // 5c
-  //glBindTexture(GL_TEXTURE_2D, skybox_tex);
+  skybox_transform = IdentityMatrix();
 
 
   printError("init arrays");
@@ -194,50 +194,55 @@ void display(void)
   // Set rotation matrix
   phi = ( phi < 2*PI ) ? phi+PI/100 : phi-2*PI+PI/100;
 
-  // Translations for windmill
-  mat4 trans_mill = T(0,-5,-30);
-
   // Translations for wings/blades
   mat4 trans_wings = T(0,0,-26);
   mat4 rotation_wings = Ry(PI/2);
   mat4 trans_wings_up = T(0,1.3,0);
+  // Translations for windmill
+  mat4 trans_mill = T(0,-5,-30);
 
   // ---------------------------
   // Movement of camera with keyboard
   handle_keyboard(&cameraLocation, &lookAtPoint, &upVector, &movement_speed);
 
+  // Move skybox after cameraLocation is changed by input handling
+  skybox_transform = move_skybox(&skybox_location, &cameraLocation);
   // ---------------------------
 
   mat4 lookAtMatrix = lookAtv(cameraLocation,lookAtPoint,upVector);
-  transformMatrix = trans_mill;
+
+
+  glUseProgram(ground_shaders);
+  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "lookAtMatrix"), 1, GL_TRUE,  lookAtMatrix.m);
 
   // Draw skybox
   glDisable(GL_DEPTH_TEST);
-  glUseProgram(ground_shaders);
   glBindTexture(GL_TEXTURE_2D, skybox_tex);
+  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "transformMatrix"), 1, GL_TRUE,  skybox_transform.m);
   glUniform1i(glGetUniformLocation(ground_shaders, "tex"), 1);
-  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "lookAtMatrix"), 1, GL_TRUE, lookAtMatrix.m);
   DrawModel(skybox, ground_shaders, "in_Position", NULL, "inTexCoord");
 
 
   // Draw and texture ground
   glEnable(GL_DEPTH_TEST);
   glBindTexture(GL_TEXTURE_2D, ground_tex);
+  transformMatrix = T(0, -5.4, 0);
+  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "transformMatrix"), 1, GL_TRUE,  transformMatrix.m);
   glUniform1i(glGetUniformLocation(ground_shaders, "tex"), 0);
   DrawModel(ground, ground_shaders, "in_Position", NULL, "inTexCoord");
 
   glUseProgram(program);
+  glUniformMatrix4fv(glGetUniformLocation(program, "lookAtMatrix"), 1, GL_TRUE, lookAtMatrix.m);
   // Draw windmill
+  transformMatrix = trans_mill;
   glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  transformMatrix.m);
-  // Send lookAt-vector to vertex shader
-  glUniformMatrix4fv(glGetUniformLocation(program, "lookAtMatrix"), 1, GL_TRUE,  lookAtMatrix.m);
-  DrawModel(mill, program, "in_Position", "in_Normal", "inTexCoord");
+  DrawModel(mill, program, "in_Position", "in_Normal", NULL);
 
   // Model 2
   for (size_t i = 0; i < 4; i++) {
     transformMatrix = Mult(trans_wings_up, Mult(Rz(phi+i*(PI/2)), Mult(trans_wings, rotation_wings)));
     glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  transformMatrix.m);
-    DrawModel(wing, program, "in_Position", "in_Normal", "inTexCoord");
+    DrawModel(wing, program, "in_Position", "in_Normal", NULL);
   }
 
   printError("display");

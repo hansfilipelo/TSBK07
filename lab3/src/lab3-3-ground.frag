@@ -1,7 +1,6 @@
 #version 150
 
 in vec2 outTexCoord;
-in vec3 shading;
 
 uniform sampler2D tex;
 
