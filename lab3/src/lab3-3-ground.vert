@@ -21,6 +21,6 @@ void main(void)
 	vec3 temp_normal = mat3(lookAtMatrix) * in_Normal;
 	shade = dot(normalize(temp_normal),light);
 	shading = vec3(shade);
-
+	
 	outTexCoord = inTexCoord;
 }

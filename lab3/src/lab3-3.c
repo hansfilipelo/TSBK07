@@ -27,6 +27,8 @@
 #include<GL/glu.h>
 #endif
 
+#include "../common/input_handler.h"
+
 #define MAX_FILE_SIZE 255
 /* max file name length on windows using it since a file probably does not
 have a longer name than this */
@@ -99,88 +101,8 @@ static const float movement_speed = 0.6;
 // Mouse
 static const float mouse_speed = 0.01;
 
-// ---------------------------
-
-void yaw(float deltax, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVector)
-{
-  // Does yaw
-  vec3 look_at_vector = VectorSub(*lookAtPoint, *cameraLocation);
-  mat4 translation_matrix = T(look_at_vector.x, look_at_vector.y, look_at_vector.z);
-  *lookAtPoint = MultVec3(Mult(Ry(-deltax*mouse_speed), translation_matrix), *cameraLocation);
-}
-
-// ---
-
-void pitch(float deltay, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVector)
-{
-  // Evaluate once
-  static const float break_angle = 0.88; // cos(pi/4) = 0.71
-  // End eval once
-
-  // Do pitch if the angle between upVector and look_at_vector isn't too small
-  vec3 look_at_vector = VectorSub(*lookAtPoint, *cameraLocation);
-  float dot_product = DotProduct(look_at_vector, *upVector);
-
-  mat4 translation_matrix = T(look_at_vector.x, look_at_vector.y, look_at_vector.z);
-  vec3 rotation_axis = ScalarMult(CrossProduct(look_at_vector, *upVector), -1);
-  *lookAtPoint = MultVec3(Mult(ArbRotate(rotation_axis, deltay*mouse_speed), translation_matrix), *cameraLocation);
-}
-
-// ---
-
-void handleMouse(int x, int y)
-{
-  // Only initialized once
-  static float last_x = 0.0;
-  static float last_y = 0.0;
-  static float deltax;
-  static float deltay;
-  // End of only initialized once
-
-  #ifdef __APPLE__
-  int window_center_x = glutGet(GLUT_WINDOW_WIDTH)/2;
-  int window_center_y = glutGet(GLUT_WINDOW_HEIGHT)/2;
-  #elif defined __linux__
-  int window_center_x = 150;
-  int window_center_y = 150;
-  #endif
-
-  deltax = (float)x - last_x;
-  deltay = (float)y - last_y;
-
-  last_x = x;
-  last_y = y;
-
-  //if the mouse does large changes quickly (for example during a warp, ignore the change)
-  if((abs((int)deltax)>25) || (abs((int)deltay)>25))
-  {
-    deltax = 0;
-    deltay = 0;
-
-    last_x = (float)x;
-    last_y = (float)y;
-
-  }
-
-  // Do rotation
-  yaw(deltax, mouse_speed, &cameraLocation, &lookAtPoint, &upVector);
-  pitch(deltay, mouse_speed, &cameraLocation, &lookAtPoint, &upVector);
-
-  /*Fix for quartz issue found at http://stackoverflow.com/questions/10196603/using-cgeventsourcesetlocaleventssuppressioninterval-instead-of-the-deprecated/17547015#17547015
-  */
-  // if mouse wander off too much, warp it back.
-  int dist = (window_center_x < window_center_y) ? window_center_x/2: window_center_y/2;
-
-  if(x > window_center_x+dist || x < window_center_x-dist || y > window_center_y+dist || y < window_center_y-dist){
-    #ifdef __APPLE__ // Fix for OS X >= 10.10, which MicroGlut does not work with
-    CGPoint warpPoint = CGPointMake(window_center_x, window_center_y);
-    CGWarpMouseCursorPosition(warpPoint);
-    CGAssociateMouseAndMouseCursorPosition(true);
-    #endif
-    #ifndef __APPLE__
-    glutWarpPointer( window_center_x, window_center_y );
-    #endif
-  }
+void handle_mouse_helper(int x, int y){
+  handle_mouse(x, y, mouse_speed, &cameraLocation, &lookAtPoint, &upVector);
 }
 
 // ----------------------------------------
@@ -191,7 +113,7 @@ void init(void)
 
   dumpInfo(); // Dump driver info to stdout
 
-  glutPassiveMotionFunc(&handleMouse); // set up mouse movement.
+  glutPassiveMotionFunc(&handle_mouse_helper); // set up mouse movement.
   #ifdef __APPLE__
   glutHideCursor();
   #endif
@@ -241,16 +163,16 @@ void init(void)
   glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "projectionMatrix"), 1, GL_TRUE, projectionMatrix);
 
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, ground_tex);
   LoadTGATextureSimple("models/grass.tga", &ground_tex); // 5c
+  glBindTexture(GL_TEXTURE_2D, ground_tex);
   transformMatrix = T(0, -5.4, 0);
 
   glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "transformMatrix"), 1, GL_TRUE, transformMatrix.m);
 
   // Upload stuff for skybox
-  glActiveTexture(GL_TEXTURE0+1);
-  glBindTexture(GL_TEXTURE_2D, skybox_tex);
+  glActiveTexture(GL_TEXTURE1);
   LoadTGATextureSimple("models/SkyBox512.tga", &skybox_tex); // 5c
+  glBindTexture(GL_TEXTURE_2D, skybox_tex);
 
 
   printError("init arrays");
@@ -259,38 +181,6 @@ void init(void)
 
 
 // ----------------------------------------
-
-void handleKeyBoard(vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVector, const float* movement_speed)
-{
-  // This is the direction the camera is looking
-  vec3 translator;
-  vec3 y_vector = {0, 1, 0};
-  vec3 direction = Normalize(VectorSub(*cameraLocation, *lookAtPoint));
-  vec3 temp = {direction.x, 0, direction.z};
-  vec3 projected_direction = Normalize(temp);
-
-  if ( glutKeyIsDown('w') ) {
-    translator = ScalarMult(projected_direction,-*movement_speed);
-    *cameraLocation = VectorAdd(*cameraLocation, ScalarMult(projected_direction, -*movement_speed));
-    *lookAtPoint = VectorAdd(*lookAtPoint, translator);
-  }
-  if (glutKeyIsDown('d')) {
-    translator = ScalarMult(Normalize(CrossProduct(projected_direction, y_vector)), -*movement_speed);
-    *cameraLocation = VectorAdd(*cameraLocation, translator);
-    *lookAtPoint = VectorAdd(*lookAtPoint, translator);
-  }
-  if ( glutKeyIsDown('a') ) {
-    translator = ScalarMult(Normalize(CrossProduct(projected_direction, y_vector)), *movement_speed);
-    *cameraLocation = VectorAdd(*cameraLocation, translator);
-    *lookAtPoint = VectorAdd(*lookAtPoint, translator);
-  }
-  if ( glutKeyIsDown('s') ) {
-    translator = ScalarMult(projected_direction,*movement_speed);
-    *cameraLocation = VectorAdd(*cameraLocation, translator);
-    *lookAtPoint = VectorAdd(*lookAtPoint, translator);
-  }
-}
-
 
 
 // ----------------------------------------
@@ -316,7 +206,7 @@ void display(void)
 
   // ---------------------------
   // Movement of camera with keyboard
-  handleKeyBoard(&cameraLocation, &lookAtPoint, &upVector, &movement_speed);
+  handle_keyboard(&cameraLocation, &lookAtPoint, &upVector, &movement_speed);
 
   // ---------------------------
 
@@ -327,12 +217,18 @@ void display(void)
   glDisable(GL_DEPTH_TEST);
   glUseProgram(ground_shaders);
   glBindTexture(GL_TEXTURE_2D, skybox_tex);
-  glUniform1i(glGetUniformLocation(ground_shaders, "tex"), skybox_tex);
+  glUniform1i(glGetUniformLocation(ground_shaders, "tex"), 1);
   glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "lookAtMatrix"), 1, GL_TRUE, lookAtMatrix.m);
   DrawModel(skybox, ground_shaders, "in_Position", "in_Normal", "inTexCoord");
 
 
+  // Draw and texture ground
   glEnable(GL_DEPTH_TEST);
+  glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  transformMatrix.m);
+  glBindTexture(GL_TEXTURE_2D, ground_tex);
+  glUniform1i(glGetUniformLocation(ground_shaders, "tex"), 0);
+  DrawModel(ground, ground_shaders, "in_Position", "in_Normal", "inTexCoord");
+
   glUseProgram(program);
   // Draw windmill
   glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  transformMatrix.m);
@@ -346,13 +242,6 @@ void display(void)
     glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  transformMatrix.m);
     DrawModel(wing, program, "in_Position", "in_Normal", "inTexCoord");
   }
-
-  // Draw and texture ground
-  glUseProgram(ground_shaders);
-
-  glBindTexture(GL_TEXTURE_2D, skybox_tex);
-  glUniform1i(glGetUniformLocation(ground_shaders, "tex"), skybox_tex);
-  DrawModel(ground, ground_shaders, "in_Position", "in_Normal", "inTexCoord");
 
   printError("display");
 
