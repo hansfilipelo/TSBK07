@@ -80,6 +80,7 @@ GLfloat minSin;
 // Reference to shader program
 GLuint program;
 GLuint ground_shaders;
+GLuint skybox_shaders;
 
 // Reference to texture
 GLuint ground_tex;
@@ -97,7 +98,6 @@ vec3 lookAtPoint = {0,0,-30};
 static const vec3 upVector = {0,1,0};
 static const float movement_speed = 0.6;
 mat4 skybox_transform;
-vec3 skybox_location = {0, 0, 0};
 
 
 // Mouse
@@ -153,6 +153,7 @@ void init(void)
 
   program = loadShaders(vertex_shader, fragment_shader); // These are the programs that run on GPU
   ground_shaders = loadShaders("src/lab3-3-ground.vert", "src/lab3-3-ground.frag");
+  skybox_shaders = loadShaders("src/lab3-3-skybox.vert", "src/lab3-3-skybox.frag");
   printError("init shader");
 
   // --------------------------------------
@@ -166,11 +167,20 @@ void init(void)
 
   glActiveTexture(GL_TEXTURE0);
   LoadTGATextureSimple("models/grass.tga", &ground_tex); // 5c
-  transformMatrix = T(0, -5.4, 0);
-  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "transformMatrix"), 1, GL_TRUE, transformMatrix.m);
+  int gr_scler_scalar = 10;
+  mat4 temp_scaler = {
+    1*gr_scler_scalar, 0, 0, 0,
+    0, 1*gr_scler_scalar, 0, 0,
+    0, 0, 1*gr_scler_scalar, 0,
+    0, 0, 0, 1
+  };
+  mat4 ground_scaler = Mult(T(0, -5.4, 0), temp_scaler);
+  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "transformMatrix"), 1, GL_TRUE, ground_scaler.m);
 
   // Upload stuff for skybox
-  glActiveTexture(GL_TEXTURE1);
+  glUseProgram(skybox_shaders);
+  glUniformMatrix4fv(glGetUniformLocation(skybox_shaders, "projectionMatrix"), 1, GL_TRUE, projectionMatrix);
+  glActiveTexture(GL_TEXTURE0);
   LoadTGATextureSimple("models/SkyBox512.tga", &skybox_tex); // 5c
   skybox_transform = IdentityMatrix();
 
@@ -206,30 +216,31 @@ void display(void)
   handle_keyboard(&cameraLocation, &lookAtPoint, &upVector, &movement_speed);
 
   // Move skybox after cameraLocation is changed by input handling
-  skybox_transform = move_skybox(&skybox_location, &cameraLocation);
+  skybox_transform = move_skybox(&cameraLocation);
   // ---------------------------
 
   mat4 lookAtMatrix = lookAtv(cameraLocation,lookAtPoint,upVector);
 
 
-  glUseProgram(ground_shaders);
-  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "lookAtMatrix"), 1, GL_TRUE,  lookAtMatrix.m);
+  glUseProgram(skybox_shaders);
+  glUniformMatrix4fv(glGetUniformLocation(skybox_shaders, "lookAtMatrix"), 1, GL_TRUE,  lookAtMatrix.m);
 
   // Draw skybox
   glDisable(GL_DEPTH_TEST);
   glBindTexture(GL_TEXTURE_2D, skybox_tex);
-  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "transformMatrix"), 1, GL_TRUE,  skybox_transform.m);
-  glUniform1i(glGetUniformLocation(ground_shaders, "tex"), 1);
+  glUniformMatrix4fv(glGetUniformLocation(skybox_shaders, "transformMatrix"), 1, GL_TRUE,  skybox_transform.m);
+  glUniform1i(glGetUniformLocation(skybox_shaders, "tex"), 0);
   DrawModel(skybox, ground_shaders, "in_Position", NULL, "inTexCoord");
 
 
   // Draw and texture ground
+  glUseProgram(ground_shaders);
+  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "lookAtMatrix"), 1, GL_TRUE,  lookAtMatrix.m);
   glEnable(GL_DEPTH_TEST);
   glBindTexture(GL_TEXTURE_2D, ground_tex);
-  transformMatrix = T(0, -5.4, 0);
-  glUniformMatrix4fv(glGetUniformLocation(ground_shaders, "transformMatrix"), 1, GL_TRUE,  transformMatrix.m);
   glUniform1i(glGetUniformLocation(ground_shaders, "tex"), 0);
   DrawModel(ground, ground_shaders, "in_Position", NULL, "inTexCoord");
+
 
   glUseProgram(program);
   glUniformMatrix4fv(glGetUniformLocation(program, "lookAtMatrix"), 1, GL_TRUE, lookAtMatrix.m);

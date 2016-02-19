@@ -115,9 +115,7 @@ static void pitch(float deltay, float mouse_speed, vec3* cameraLocation, vec3* l
 
 // ------------------------
 
-mat4 move_skybox(vec3* skybox_location, vec3* cameraLocation)
+mat4 move_skybox(vec3* cameraLocation)
 {
-  vec3 translation_vector = {cameraLocation->x-skybox_location->x, cameraLocation->y-skybox_location->y, cameraLocation->z-skybox_location->z};
-
-  return T(translation_vector.x, translation_vector.y, translation_vector.z);
+  return T(cameraLocation->x, cameraLocation->y-0.1, cameraLocation->z);
 }
