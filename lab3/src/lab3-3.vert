@@ -8,7 +8,6 @@ uniform mat4 transformMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 lookAtMatrix;
 
-out vec2 outTexCoord;
 out vec3 shading;
 
 void main(void)
@@ -21,6 +20,4 @@ void main(void)
 	vec3 temp_normal = mat3(lookAtMatrix) * in_Normal;
 	shade = dot(normalize(temp_normal),light);
 	shading = vec3(shade);
-
-	outTexCoord = inTexCoord;
 }
