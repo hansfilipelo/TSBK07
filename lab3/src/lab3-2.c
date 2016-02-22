@@ -1,6 +1,7 @@
 // Questions:
 // 1) Why don't we need a buffer to upload translMatrix? Do we need buffers for everything that is not uniform (for example different colors)?
 
+
 // Lab 1-2.
 // This is the same as the first simple example in the course book,
 // but with a few error checks.
@@ -19,7 +20,7 @@
 
 #define MAX_FILE_SIZE 255
 /* max file name length on windows using it since a file probably does not
-have a longer name than this */
+ have a longer name than this */
 
 #include <math.h>
 #include <string.h>
@@ -79,38 +80,7 @@ vec3 lookAtPoint = {0,0,-30};
 static const vec3 upVector = {0,1,0};
 static const float movement_speed = 0.6;
 
-
-// Mouse
-static const float mouse_speed = 0.01;
-
-// ---------------------------
-
-void yaw(float deltax, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVector)
-{
-  // Does yaw
-  vec3 look_at_vector = VectorSub(*lookAtPoint, *cameraLocation);
-  mat4 translation_matrix = T(look_at_vector.x, look_at_vector.y, look_at_vector.z);
-  *lookAtPoint = MultVec3(Mult(Ry(-deltax*mouse_speed), translation_matrix), *cameraLocation);
-}
-
-// ---
-
-void pitch(float deltay, float mouse_speed, vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVector)
-{
-  // Evaluate once
-  static const float break_angle = 0.88; // cos(pi/4) = 0.71
-  // End eval once
-
-  // Do pitch if the angle between upVector and look_at_vector isn't too small
-  vec3 look_at_vector = VectorSub(*lookAtPoint, *cameraLocation);
-  float dot_product = DotProduct(look_at_vector, *upVector);
-
-  mat4 translation_matrix = T(look_at_vector.x, look_at_vector.y, look_at_vector.z);
-  vec3 rotation_axis = ScalarMult(CrossProduct(look_at_vector, *upVector), -1);
-  *lookAtPoint = MultVec3(Mult(ArbRotate(rotation_axis, deltay*mouse_speed), translation_matrix), *cameraLocation);
-}
-
-// ---
+// ----------------------------------------
 
 void handleMouse(int x, int y)
 {
@@ -162,6 +132,7 @@ void handleMouse(int x, int y)
   }
 }
 
+
 // ----------------------------------------
 
 void init(void)
@@ -171,9 +142,7 @@ void init(void)
   dumpInfo(); // Dump driver info to stdout
 
   glutPassiveMotionFunc(&handleMouse); // set up mouse movement.
-  #ifdef __APPLE__
   glutHideCursor();
-  #endif
 
   // Load Model
   mill = LoadModelPlus("models/windmill/windmill-walls.obj");
@@ -204,18 +173,19 @@ void init(void)
   program = loadShaders(vertex_shader, fragment_shader); // These are the programs that run on GPU
   printError("init shader");
 
+
+
   // --------------------------------------
 
   glUniformMatrix4fv(glGetUniformLocation(program, "projectionMatrix"), 1, GL_TRUE, projectionMatrix);
 
   printError("init arrays");
-
 }
 
 
 // ----------------------------------------
 
-void handleKeyBoard(vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVector, const float* movement_speed)
+void handleKeyBoard(vec3* cameraLocation, vec3* lookAtPoint, vec3* upVector, const float* movement_speed)
 {
   // This is the direction the camera is looking
   vec3 translator;
@@ -245,8 +215,6 @@ void handleKeyBoard(vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVecto
     *lookAtPoint = VectorAdd(*lookAtPoint, translator);
   }
 }
-
-
 
 // ----------------------------------------
 
