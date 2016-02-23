@@ -102,7 +102,7 @@ Model *teapot;
 
 // camera
 
-vec3 cameraLocation = {0,0.0f,0};
+vec3 cameraLocation = {0.0f,0.0f,0.0f};
 vec3 lookAtPoint = {0,0,-30};
 static const vec3 upVector = {0,1,0};
 static const float movement_speed = 0.6;
@@ -131,6 +131,9 @@ Point3D lightSourcesDirectionsPositions[] = {
   {-1.0f, 0.0f, 0.0f}, // Blue light along X
   {0.0f, 0.0f, -1.0f} // White light along Z
 };
+
+GLfloat specularExponent[] = {10.0, 20.0, 60.0, 5.0};
+GLint isDirectional[] = {0,0,1,1};
 
 // ----------------------------------------
 
@@ -196,6 +199,11 @@ void init(void)
   glUniformMatrix4fv(glGetUniformLocation(program, "transformMatrix"), 1, GL_TRUE,  trans_mill.m);
   trans_wings = T(0,0,-26);
   trans_wings_up = T(4.6, 4.2, -4);
+  // Upload light
+  glUniform3fv(glGetUniformLocation(program, "lightSourcesDirPosArr"), 4, &lightSourcesDirectionsPositions[0].x);
+  glUniform3fv(glGetUniformLocation(program, "lightSourcesColorArr"), 4, &lightSourcesColorsArr[0].x);
+  glUniform1fv(glGetUniformLocation(program, "specularExponent"), 4, specularExponent);
+  glUniform1iv(glGetUniformLocation(program, "isDirectional"), 4, isDirectional);
 
   // Upload stuff for ground
   glUseProgram(ground_shaders);
@@ -220,13 +228,7 @@ void init(void)
   LoadTGATextureSimple("models/SkyBox512.tga", &skybox_tex); // 5c
   skybox_transform = IdentityMatrix();
 
-  // Upload light
-  glUniform3fv(glGetUniformLocation(program, "lightSourcesDirPosArr"), 4, &lightSourcesDirectionsPositions[0].x);
-  glUniform3fv(glGetUniformLocation(program, "lightSourcesColorArr"), 4, &lightSourcesColorsArr[0].x);
-  glUniform1fv(glGetUniformLocation(program, "specularExponent"), 4, specularExponent);
-  glUniform1iv(glGetUniformLocation(program, "isDirectional"), 4, isDirectional);
 
-  
 
   printError("init arrays");
 
@@ -282,6 +284,7 @@ void display(void)
 
   // Model program
   glUseProgram(program);
+  glUniform3f(glGetUniformLocation(program, "camera_position"), cameraLocation.x, cameraLocation.y, cameraLocation.z);
   glUniformMatrix4fv(glGetUniformLocation(program, "lookAtMatrix"), 1, GL_TRUE, lookAtMatrix.m);
 
   // Draw teapot
