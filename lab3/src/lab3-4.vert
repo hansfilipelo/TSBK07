@@ -14,49 +14,53 @@ uniform vec3 lightSourcesColorArr[4];
 uniform float specularExponent[4];
 uniform bool isDirectional[4];
 
-out vec3 shading;
+out vec4 shading;
 
 void main(void)
 {
+	vec3 surface_position = (transformMatrix * vec4(in_Position, 1.0)).xyz;
+	vec3 world_normal = normalize(mat3(transformMatrix) * in_Normal);
 	gl_Position = projectionMatrix * lookAtMatrix * transformMatrix * vec4(in_Position, 1.0);
 
-	float diffuse, specular, shade;
+	vec3 shade = vec3(0,0,0);
+	vec3 diffuse = vec3(0,0,0);
+	vec3 specular = vec3(0,0,0);
 
 	// Diffuse
 	float temp_diffuse = 0;
-	diffuse = 0;
 	for(int i = 0; i < 4; i++)
 	{
-		temp_diffuse = dot(in_Normal, lightSourcesColorArr[i]);
+		temp_diffuse = dot(world_normal, lightSourcesDirPosArr[i]);
 		temp_diffuse = max(0.0, temp_diffuse); // No negative light
-		diffuse += temp_diffuse;
+		diffuse += temp_diffuse * lightSourcesColorArr[i];
 	}
 
 	// Specular
-	float temp_specular = 0;
-	specular = 0;
+	float temp_specular;
 	for(int i = 0; i < 4; i++)
 	{
 		vec3 r;
 
 		if (isDirectional[i])
 		{
-			r = reflect(lightSourcesDirPosArr[i], in_Normal);
+			r = reflect(lightSourcesDirPosArr[i], world_normal);
 		}
 		else{
-			r = reflect(normalize(lightSourcesDirPosArr[i]-in_Position), in_Normal);
+			r = reflect(normalize(surface_position-lightSourcesDirPosArr[i]), world_normal);
 		}
 
-		vec3 v = normalize(camera_position-in_Position); // Reverse view direction
+		vec3 v = normalize(camera_position-surface_position); // Reverse view direction
 
 		temp_specular = dot(r, v);
 		if (temp_specular > 0.0)
-			temp_specular = 1.0 * pow(specular, specularExponent[i]);
-		temp_specular = max(specular, 0.0);
-		specular += temp_specular;
+		{
+			temp_specular = pow(temp_specular, specularExponent[i]);
+		}
+		temp_specular = max(temp_specular, 0.0);
+		specular += temp_specular * lightSourcesColorArr[i];
 	}
 
 	// Out
-	shade = clamp(0.7*diffuse + 1*specular, 0, 1);
-	shading = vec3(shade, shade, shade);
+	shade = specular;
+	shading = vec4(shade, 1.0);
 }
