@@ -32,3 +32,19 @@ Used global variables. Probably not reasonable to use all in the same file in re
 
 **What special considerations are needed when rendering a skybox?**
 No Z-buffer.
+
+## 3-4
+
+**How do you generate a vector from the surface to the eye?**
+World coordinates. Generate by taking surface locations minus camera location.
+
+**Which vectors need renormalization in the fragment shader?**
+r, v.
+
+## 3-5
+
+**How did you choose to combine the texture colour and the lighting colour?**
+Add them?
+
+**How did you choose to combine the two textures?**
+Change with sin(pos.x)
