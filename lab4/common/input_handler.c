@@ -5,7 +5,6 @@ void handle_keyboard(vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVect
 {
   // This is the direction the camera is looking
   vec3 translator;
-  vec3 y_vector = {0, 1, 0};
   vec3 direction = Normalize(VectorSub(*cameraLocation, *lookAtPoint));
   vec3 projected_direction = Normalize(direction);
 
@@ -15,12 +14,12 @@ void handle_keyboard(vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVect
     *lookAtPoint = VectorAdd(*lookAtPoint, translator);
   }
   if (glutKeyIsDown('d')) {
-    translator = ScalarMult(Normalize(CrossProduct(projected_direction, y_vector)), -*movement_speed);
+    translator = ScalarMult(Normalize(CrossProduct(projected_direction, *upVector)), -*movement_speed);
     *cameraLocation = VectorAdd(*cameraLocation, translator);
     *lookAtPoint = VectorAdd(*lookAtPoint, translator);
   }
   if ( glutKeyIsDown('a') ) {
-    translator = ScalarMult(Normalize(CrossProduct(projected_direction, y_vector)), *movement_speed);
+    translator = ScalarMult(Normalize(CrossProduct(projected_direction, *upVector)), *movement_speed);
     *cameraLocation = VectorAdd(*cameraLocation, translator);
     *lookAtPoint = VectorAdd(*lookAtPoint, translator);
   }
@@ -57,7 +56,7 @@ void handle_mouse(int x, int y, float mouse_speed, vec3* cameraLocation, vec3* l
   last_y = y;
 
   //if the mouse does large changes quickly (for example during a warp, ignore the change)
-  if((abs((int)deltax)>25) || (abs((int)deltay)>25))
+  if((abs((int)deltax)>50) || (abs((int)deltay)>50))
   {
     deltax = 0;
     deltay = 0;

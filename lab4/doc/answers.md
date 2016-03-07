@@ -7,7 +7,7 @@ Grayscale data. Have no idea of range.
 
 
 **The terrain is 4x4. How many polygons does it draw?**
-6x2=12?
+6x2x3=36?
 
 ## 4-2
 
