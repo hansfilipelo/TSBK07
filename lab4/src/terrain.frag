@@ -57,6 +57,6 @@ void main(void)
 	}
 
 	// Out
-	shade = 0.05*diffuse + 0.3*specular; //vec4(shade, 1.0)
+	shade = diffuse + specular; //vec4(shade, 1.0)
 	outColor = vec4(shade, 1.0) + texture(tex, texCoord);
 }
