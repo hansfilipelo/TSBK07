@@ -113,10 +113,6 @@ mat4 skybox_transform;
 
 // Mouse
 static const float mouse_speed = 0.01;
-
-void handle_mouse_helper(int x, int y){
-  handle_mouse(x, y, mouse_speed, &cameraLocation, &lookAtPoint, &upVector);
-}
 // ----------------------------------------
 // Light
 

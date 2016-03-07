@@ -8,3 +8,10 @@ Grayscale data. Have no idea of range.
 
 **The terrain is 4x4. How many polygons does it draw?**
 6x2=12?
+
+## 4-2
+
+**Did you need to extend your camera movement code? How?**
+I removed a projections which locked movement to XZ-plane.
+
+## 4-3

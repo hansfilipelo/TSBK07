@@ -128,9 +128,6 @@ void init(void)
 	LoadTGATextureData("models/fft-terrain.tga", &ttex);
 	tm = GenerateTerrain(&ttex);
 	printError("init terrain");
-
-	glutPassiveMotionFunc(&handle_mouse_helper); // set up mouse movement.
-	glutHideCursor(); // Mouse does not work on OS X otherwise
 }
 
 void display(void)
@@ -183,7 +180,8 @@ int main(int argc, char **argv)
 	init ();
 	glutTimerFunc(20, &timer, 0);
 
-	glutPassiveMotionFunc(mouse);
+	glutPassiveMotionFunc(&handle_mouse_helper); // set up mouse movement.
+	glutHideCursor(); // Mouse does not work on OS X otherwise
 
 	glutMainLoop();
 	exit(0);
