@@ -110,7 +110,7 @@ Model* GenerateTerrain(TextureData *tex)
   {
     // Vertex array. You need to scale this properly
     vertexArray[(x + z * tex->width)*3 + 0] = x / 1.0;
-    vertexArray[(x + z * tex->width)*3 + 1] = tex->imageData[(x + z * tex->width) * (tex->bpp/8)] / 20.0;
+    vertexArray[(x + z * tex->width)*3 + 1] = tex->imageData[(x + z * tex->width) * (tex->bpp/8)] / 100.0;
     vertexArray[(x + z * tex->width)*3 + 2] = z / 1.0;
 
     // Texture coordinates. You may want to scale them.
@@ -128,11 +128,7 @@ Model* GenerateTerrain(TextureData *tex)
     indexArray[(x + z * (tex->width-1))*6 + 3] = x+1 + z * tex->width;
     indexArray[(x + z * (tex->width-1))*6 + 4] = x + (z+1) * tex->width;
     indexArray[(x + z * (tex->width-1))*6 + 5] = x+1 + (z+1) * tex->width;
-  }
 
-  // Need to iterate again in order to get the better normals
-  for (x = 0; x < tex->width; x++)
-  for (z = 0; z < tex->height; z++) {
     // Calculating normal vectors
     vec3 first_vertex = (vec3){vertexArray[(x + z * tex->width)*3 + 0], vertexArray[(x + z * tex->width)*3 + 1], vertexArray[(x + z * tex->width)*3 + 2]};
     vec3 second_vertex;
@@ -222,7 +218,7 @@ Model* GenerateTerrain(TextureData *tex)
 
     // Load terrain data
 
-    LoadTGATextureData("models/fft-terrain.tga", &ttex);
+    LoadTGATextureData("models/44-terrain.tga", &ttex);
     tm = GenerateTerrain(&ttex);
     printError("init terrain");
 
@@ -247,7 +243,7 @@ Model* GenerateTerrain(TextureData *tex)
     printError("Init light model_shader");
 
     sphere = LoadModelPlus("models/groundsphere.obj");
-    mat4 transposeLocation = T(0,0,0);//T(10, getHeight(tm, 10, 10, ttex.width), 10);
+    mat4 transposeLocation = T(2,0,2);//T(10, getHeight(tm, 10, 10, ttex.width), 10);
     glUniformMatrix4fv(glGetUniformLocation(model_shader, "transformMatrix"), 1, GL_TRUE, transposeLocation.m);
     printError("Init model shader last");
     // lookAtPoint = (vec3){10, getHeight(tm, 10, 10, ttex.width), 10};
@@ -277,13 +273,13 @@ Model* GenerateTerrain(TextureData *tex)
     glUniformMatrix4fv(glGetUniformLocation(program, "mdlMatrix"), 1, GL_TRUE, total.m);
     // For light
     glUniform3f(glGetUniformLocation(program, "camera_position"), cam.x, cam.y, cam.z);
-
     glBindTexture(GL_TEXTURE_2D, tex1);		// Bind Our Texture tex1
     DrawModel(tm, program, "inPosition", "inNormal", "inTexCoord");
 
     // Draw sphere
     glUseProgram(model_shader);
     glUniformMatrix4fv(glGetUniformLocation(model_shader, "mdlMatrix"), 1, GL_TRUE, total.m);
+    glUniform3f(glGetUniformLocation(model_shader, "camera_position"), cam.x, cam.y, cam.z);
     DrawModel(sphere, model_shader, "inPosition", "inNormal", "inTexCoord");
 
     printError("display 3");
