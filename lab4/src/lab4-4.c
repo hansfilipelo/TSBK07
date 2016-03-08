@@ -30,8 +30,12 @@
 
 mat4 projectionMatrix;
 
-vec3 cam = {0, 1.5, 8};
-vec3 lookAtPoint = {2, 0, 2};
+vec3 cam = {0, 5, 8};
+vec3 lookAtPoint = {10, 5, 10};
+mat4 transposeLocation;
+float t = 0.0;
+int t_switch = 0;
+
 static const vec3 upVector = {0,1,0};
 static const float movement_speed = 0.3;
 // Mouse
@@ -81,7 +85,7 @@ float getHeight(Model* model, float x, float z, int texWidth)
   else
   {
     normal = (vec3){model->normalArray[(intX+1 + intZ+1 * texWidth)*3 + 0], model->normalArray[(intX+1 + intZ+1 * texWidth)*3 + 1], model->normalArray[(intX+1 + intZ+1 * texWidth)*3 + 2]};
-    a_vertex = (vec3){model->vertexArray[(intX+1 + intZ+1 * texWidth)*3 + 0], model->vertexArray[(intX+1 + intZ+1 * texWidth)*3 + 1], model->vertexArray[(intX+1 + intZ+1 * texWidth)*3 + 2]};
+    a_vertex = (vec3){model->vertexArray[(intX+1 + intZ * texWidth)*3 + 0], model->vertexArray[(intX+1 + intZ * texWidth)*3 + 1], model->vertexArray[(intX+1 + intZ * texWidth)*3 + 2]};
   }
 
   // Get constant for plane equation (Ax+By+Cz = D), any corner will do
@@ -110,7 +114,7 @@ Model* GenerateTerrain(TextureData *tex)
   {
     // Vertex array. You need to scale this properly
     vertexArray[(x + z * tex->width)*3 + 0] = x / 1.0;
-    vertexArray[(x + z * tex->width)*3 + 1] = tex->imageData[(x + z * tex->width) * (tex->bpp/8)] / 100.0;
+    vertexArray[(x + z * tex->width)*3 + 1] = tex->imageData[(x + z * tex->width) * (tex->bpp/8)] / 20.0;
     vertexArray[(x + z * tex->width)*3 + 2] = z / 1.0;
 
     // Texture coordinates. You may want to scale them.
@@ -143,10 +147,10 @@ Model* GenerateTerrain(TextureData *tex)
     vec3 second_base = VectorSub(third_vertex, first_vertex);
     vec3 normal = Normalize(CrossProduct(second_base, first_base));
     // Make sure normal is always upward facing
-    if (normal.y < 0)
-    {
-      normal = ScalarMult(normal, -1);
-    }
+    // if (normal.y < 0)
+    // {
+    //   normal = ScalarMult(normal, -1);
+    // }
 
     // Normal vectors. You need to calculate these.
     normalArray[(x + z * tex->width)*3 + 0] = normal.x;
@@ -189,7 +193,7 @@ Model* GenerateTerrain(TextureData *tex)
     glDisable(GL_CULL_FACE);
     printError("GL inits");
 
-    projectionMatrix = frustum(-0.1, 0.1, -0.1, 0.1, 0.2, 50.0);
+    projectionMatrix = frustum(-0.1, 0.1, -0.1, 0.1, 0.2, 100.0);
 
     // Load and compile shader
     program = loadShaders("src/terrain.vert", "src/terrain.frag");
@@ -218,7 +222,7 @@ Model* GenerateTerrain(TextureData *tex)
 
     // Load terrain data
 
-    LoadTGATextureData("models/44-terrain.tga", &ttex);
+    LoadTGATextureData("models/fft-terrain.tga", &ttex);
     tm = GenerateTerrain(&ttex);
     printError("init terrain");
 
@@ -243,8 +247,8 @@ Model* GenerateTerrain(TextureData *tex)
     printError("Init light model_shader");
 
     sphere = LoadModelPlus("models/groundsphere.obj");
-    mat4 transposeLocation = T(2,0,2);//T(10, getHeight(tm, 10, 10, ttex.width), 10);
     glUniformMatrix4fv(glGetUniformLocation(model_shader, "transformMatrix"), 1, GL_TRUE, transposeLocation.m);
+    glUniformMatrix4fv(glGetUniformLocation(model_shader, "projMatrix"), 1, GL_TRUE, projectionMatrix.m);
     printError("Init model shader last");
     // lookAtPoint = (vec3){10, getHeight(tm, 10, 10, ttex.width), 10};
     // cam = (vec3){12, getHeight(tm, 12, 12, ttex.width)+2, 12};
@@ -260,6 +264,13 @@ Model* GenerateTerrain(TextureData *tex)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     mat4 total, modelView, camMatrix;
+
+    // Move sphere
+    t = t+0.01;
+    int start = 5;
+    float y_height = getHeight(tm, start+t, start+t, ttex.width);
+    transposeLocation = T(start+t, y_height, start+t);
+    printf("y_height: %f, x/z: %f\n", y_height, start+t);
 
     printError("pre display");
 
@@ -280,6 +291,7 @@ Model* GenerateTerrain(TextureData *tex)
     glUseProgram(model_shader);
     glUniformMatrix4fv(glGetUniformLocation(model_shader, "mdlMatrix"), 1, GL_TRUE, total.m);
     glUniform3f(glGetUniformLocation(model_shader, "camera_position"), cam.x, cam.y, cam.z);
+    glUniformMatrix4fv(glGetUniformLocation(model_shader, "transformMatrix"), 1, GL_TRUE, transposeLocation.m);
     DrawModel(sphere, model_shader, "inPosition", "inNormal", "inTexCoord");
 
     printError("display 3");

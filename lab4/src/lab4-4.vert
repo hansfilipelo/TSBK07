@@ -19,5 +19,5 @@ void main(void)
 	texCoord = inTexCoord;
 	position = inPosition;
 	normal = inNormal;
-	gl_Position = projMatrix * mdlMatrix * vec4(inPosition, 1.0);
+	gl_Position = projMatrix * mdlMatrix * transformMatrix * vec4(inPosition, 1.0);
 }
