@@ -1,4 +1,5 @@
 // Lab 4, terrain generation
+#define MAX_FILE_SIZE 255
 
 #include<stdio.h>
 #include<stdlib.h>
@@ -29,7 +30,7 @@
 
 mat4 projectionMatrix;
 
-vec3 cam = {0, 5, 10};
+vec3 cam = {0, 1.5, 8};
 vec3 lookAtPoint = {2, 0, 2};
 static const vec3 upVector = {0,1,0};
 static const float movement_speed = 0.3;
@@ -129,6 +130,7 @@ Model* GenerateTerrain(TextureData *tex)
     indexArray[(x + z * (tex->width-1))*6 + 5] = x+1 + (z+1) * tex->width;
   }
 
+  // Need to iterate again in order to get the better normals
   for (x = 0; x < tex->width; x++)
   for (z = 0; z < tex->height; z++) {
     // Calculating normal vectors
@@ -136,8 +138,10 @@ Model* GenerateTerrain(TextureData *tex)
     vec3 second_vertex;
     vec3 third_vertex;
       // Will seg-fault due to out of range if we don't check boundaries
-    second_vertex = (x+1 < tex->width) ? (vec3){vertexArray[((x+1) + z * tex->width)*3 + 0], vertexArray[((x+1) + z * tex->width)*3 + 1], vertexArray[((x+1) + z * tex->width)*3 + 2]} : (vec3){tex->width,1,z};
-    third_vertex = (z+1 < tex->height) ? (vec3){vertexArray[(x + (z+1) * tex->width)*3 + 0], vertexArray[(x + (z+1) * tex->width)*3 + 1], vertexArray[(x + (z+1) * tex->width)*3 + 2]} : (vec3){x,1,tex->height};
+
+    second_vertex = (x+1 < tex->width) ? (vec3){vertexArray[((x+1) + z * tex->width)*3 + 0], vertexArray[((x+1) + z * tex->width)*3 + 1], vertexArray[((x+1) + z * tex->width)*3 + 2]} : (vec3){vertexArray[(x + z * tex->width)*3 + 0], vertexArray[(x + z * tex->width)*3 + 1], vertexArray[(x + z * tex->width)*3 + 2]};
+
+    third_vertex = (z+1 < tex->height) ? (vec3){vertexArray[(x + (z+1) * tex->width)*3 + 0], vertexArray[(x + (z+1) * tex->width)*3 + 1], vertexArray[(x + (z+1) * tex->width)*3 + 2]} : (vec3){vertexArray[(x + z * tex->width)*3 + 0], vertexArray[(x + z * tex->width)*3 + 1],vertexArray[(x + z * tex->width)*3 + 2]};
 
     vec3 first_base = VectorSub(second_vertex, first_vertex);
     vec3 second_base = VectorSub(third_vertex, first_vertex);
@@ -172,10 +176,14 @@ Model* GenerateTerrain(TextureData *tex)
 
   // vertex array object
   Model *m, *m2, *tm;
+  Model* sphere;
   // Reference to shader program
   GLuint program;
+  GLuint model_shader;
   GLuint tex1, tex2;
   TextureData ttex; // terrain
+
+  // -------------------------------------------------
 
   void init(void)
   {
@@ -189,12 +197,28 @@ Model* GenerateTerrain(TextureData *tex)
 
     // Load and compile shader
     program = loadShaders("src/terrain.vert", "src/terrain.frag");
-    glUseProgram(program);
     printError("init shader");
 
-    glUniformMatrix4fv(glGetUniformLocation(program, "projMatrix"), 1, GL_TRUE, projectionMatrix.m);
-    glUniform1i(glGetUniformLocation(program, "tex"), 0); // Texture unit 0
-    LoadTGATextureSimple("models/grass.tga", &tex1);
+    // ------------------------------------
+    // Load and compile shader
+    char* vertex_shader = malloc(MAX_FILE_SIZE);
+    char* fragment_shader = malloc(MAX_FILE_SIZE);
+    // Initialize to empty string
+    vertex_shader[0] = '\0';
+    fragment_shader[0] = '\0';
+
+    // Append correct filename to shaders
+    char* this_file = __FILE__;
+    /* File ends with .c, 2 chars needs to be
+    removed when appending to shaders which ends with .shader-stage */
+    strncat(vertex_shader, this_file, strlen(this_file)-2);
+    strncat(fragment_shader, this_file, strlen(this_file)-2);
+    // Append name of shader-stage
+    strcat(vertex_shader,".vert");
+    strcat(fragment_shader,".frag");
+
+    model_shader = loadShaders(vertex_shader, fragment_shader); // These are the programs that run on GPU
+    printError("init shader");
 
     // Load terrain data
 
@@ -203,13 +227,34 @@ Model* GenerateTerrain(TextureData *tex)
     printError("init terrain");
 
     // Upload light
+    glUseProgram(program);
+    glUniformMatrix4fv(glGetUniformLocation(program, "projMatrix"), 1, GL_TRUE, projectionMatrix.m);
+    glUniform1i(glGetUniformLocation(program, "tex"), 0); // Texture unit 0
+    LoadTGATextureSimple("models/grass.tga", &tex1);
+    printError("Init grass");
+
     glUniform3fv(glGetUniformLocation(program, "lightSourcesDirPosArr"), 4, &lightSourcesDirectionsPositions[0].x);
     glUniform3fv(glGetUniformLocation(program, "lightSourcesColorArr"), 4, &lightSourcesColorsArr[0].x);
     glUniform1fv(glGetUniformLocation(program, "specularExponent"), 4, specularExponent);
     glUniform1iv(glGetUniformLocation(program, "isDirectional"), 4, isDirectional);
-    printError("Init light");
+    printError("Init light program");
+
+    glUseProgram(model_shader);
+    glUniform3fv(glGetUniformLocation(model_shader, "lightSourcesDirPosArr"), 4, &lightSourcesDirectionsPositions[0].x);
+    glUniform3fv(glGetUniformLocation(model_shader, "lightSourcesColorArr"), 4, &lightSourcesColorsArr[0].x);
+    glUniform1fv(glGetUniformLocation(model_shader, "specularExponent"), 4, specularExponent);
+    glUniform1iv(glGetUniformLocation(model_shader, "isDirectional"), 4, isDirectional);
+    printError("Init light model_shader");
+
+    sphere = LoadModelPlus("models/groundsphere.obj");
+    mat4 transposeLocation = T(0,0,0);//T(10, getHeight(tm, 10, 10, ttex.width), 10);
+    glUniformMatrix4fv(glGetUniformLocation(model_shader, "transformMatrix"), 1, GL_TRUE, transposeLocation.m);
+    printError("Init model shader last");
+    // lookAtPoint = (vec3){10, getHeight(tm, 10, 10, ttex.width), 10};
+    // cam = (vec3){12, getHeight(tm, 12, 12, ttex.width)+2, 12};
   }
 
+  // -------------------------------------------------
 
   void display(void)
   {
@@ -236,10 +281,17 @@ Model* GenerateTerrain(TextureData *tex)
     glBindTexture(GL_TEXTURE_2D, tex1);		// Bind Our Texture tex1
     DrawModel(tm, program, "inPosition", "inNormal", "inTexCoord");
 
-    printError("display 2");
+    // Draw sphere
+    glUseProgram(model_shader);
+    glUniformMatrix4fv(glGetUniformLocation(model_shader, "mdlMatrix"), 1, GL_TRUE, total.m);
+    DrawModel(sphere, model_shader, "inPosition", "inNormal", "inTexCoord");
+
+    printError("display 3");
 
     glutSwapBuffers();
   }
+
+  // -------------------------------------------------
 
   void timer(int i)
   {
@@ -251,6 +303,8 @@ Model* GenerateTerrain(TextureData *tex)
   {
     printf("%d %d\n", x, y);
   }
+
+  // -------------------------------------------------
 
   int main(int argc, char **argv)
   {
