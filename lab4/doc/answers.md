@@ -15,3 +15,15 @@ Grayscale data. Have no idea of range.
 I removed a projections which locked movement to XZ-plane.
 
 ## 4-3
+**How did you implement the cross product? Function call, inline...? Normalization?**
+Function call.
+
+**Which method did you use to find the normal vector?**
+Picked three neighbor vertices and calculated the normal.
+
+## 4-4
+
+**How did you figure out what surface to use?**
+
+
+**How did you calculate the height from the surface?**

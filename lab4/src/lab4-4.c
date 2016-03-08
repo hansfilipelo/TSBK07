@@ -112,28 +112,6 @@ Model* GenerateTerrain(TextureData *tex)
     vertexArray[(x + z * tex->width)*3 + 1] = tex->imageData[(x + z * tex->width) * (tex->bpp/8)] / 20.0;
     vertexArray[(x + z * tex->width)*3 + 2] = z / 1.0;
 
-    // Calculating normal vectors
-    vec3 first_vertex = {vertexArray[(x + z * tex->width)*3 + 0], vertexArray[(x + z * tex->width)*3 + 1], vertexArray[(x + z * tex->width)*3 + 2]};
-    vec3 second_vertex;
-    vec3 third_vertex;
-      // Will seg-fault due to out of range if we don't check boundaries
-    second_vertex = (x+1 > tex->width) ? (vec3){vertexArray[((x+1) + z * tex->width)*3 + 0], vertexArray[((x+1) + z * tex->width)*3 + 1], vertexArray[((x+1) + z * tex->width)*3 + 2]} : (vec3){0,1,0};
-    third_vertex = (z+1 > tex->height) ? (vec3){vertexArray[(x + (z+1) * tex->width)*3 + 0], vertexArray[(x + (z+1) * tex->width)*3 + 1], vertexArray[(x + (z+1) * tex->width)*3 + 2]} : (vec3){0,1,0};
-
-    vec3 first_base = VectorSub(second_vertex, first_vertex);
-    vec3 second_base = VectorSub(third_vertex, first_vertex);
-    vec3 normal = Normalize(CrossProduct(first_base, second_base));
-    // Make sure normal is always uppward facing
-    if (normal.y < 0)
-    {
-      normal = ScalarMult(normal, -1);
-    }
-
-    // Normal vectors. You need to calculate these.
-    normalArray[(x + z * tex->width)*3 + 0] = normal.x;
-    normalArray[(x + z * tex->width)*3 + 1] = normal.y;
-    normalArray[(x + z * tex->width)*3 + 2] = normal.z;
-
     // Texture coordinates. You may want to scale them.
     texCoordArray[(x + z * tex->width)*2 + 0] = x; // (float)x / tex->width;
     texCoordArray[(x + z * tex->width)*2 + 1] = z; // (float)z / tex->height;
@@ -149,6 +127,31 @@ Model* GenerateTerrain(TextureData *tex)
     indexArray[(x + z * (tex->width-1))*6 + 3] = x+1 + z * tex->width;
     indexArray[(x + z * (tex->width-1))*6 + 4] = x + (z+1) * tex->width;
     indexArray[(x + z * (tex->width-1))*6 + 5] = x+1 + (z+1) * tex->width;
+  }
+
+  for (x = 0; x < tex->width; x++)
+  for (z = 0; z < tex->height; z++) {
+    // Calculating normal vectors
+    vec3 first_vertex = (vec3){vertexArray[(x + z * tex->width)*3 + 0], vertexArray[(x + z * tex->width)*3 + 1], vertexArray[(x + z * tex->width)*3 + 2]};
+    vec3 second_vertex;
+    vec3 third_vertex;
+      // Will seg-fault due to out of range if we don't check boundaries
+    second_vertex = (x+1 < tex->width) ? (vec3){vertexArray[((x+1) + z * tex->width)*3 + 0], vertexArray[((x+1) + z * tex->width)*3 + 1], vertexArray[((x+1) + z * tex->width)*3 + 2]} : (vec3){tex->width,1,z};
+    third_vertex = (z+1 < tex->height) ? (vec3){vertexArray[(x + (z+1) * tex->width)*3 + 0], vertexArray[(x + (z+1) * tex->width)*3 + 1], vertexArray[(x + (z+1) * tex->width)*3 + 2]} : (vec3){x,1,tex->height};
+
+    vec3 first_base = VectorSub(second_vertex, first_vertex);
+    vec3 second_base = VectorSub(third_vertex, first_vertex);
+    vec3 normal = Normalize(CrossProduct(second_base, first_base));
+    // Make sure normal is always upward facing
+    if (normal.y < 0)
+    {
+      normal = ScalarMult(normal, -1);
+    }
+
+    // Normal vectors. You need to calculate these.
+    normalArray[(x + z * tex->width)*3 + 0] = normal.x;
+    normalArray[(x + z * tex->width)*3 + 1] = normal.y;
+    normalArray[(x + z * tex->width)*3 + 2] = normal.z;
   }
 
   // End of terrain generation
