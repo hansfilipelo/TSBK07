@@ -71,8 +71,8 @@ float getHeight(Model* model, float x, float z, int texWidth)
 {
   int intX = (int)x;
   int intZ = (int)z;
-  float deltax = x - intX;
-  float deltaz = z - intZ;
+  float deltax = x - (float)intX;
+  float deltaz = z - (float)intZ;
 
   vec3 normal;
   vec3 a_vertex;
@@ -81,11 +81,15 @@ float getHeight(Model* model, float x, float z, int texWidth)
   {
     normal = (vec3){model->normalArray[(intX + intZ * texWidth)*3 + 0], model->normalArray[(intX + intZ * texWidth)*3 + 1], model->normalArray[(intX + intZ * texWidth)*3 + 2]};
     a_vertex = (vec3){model->vertexArray[(intX + intZ * texWidth)*3 + 0], model->vertexArray[(intX + intZ * texWidth)*3 + 1], model->vertexArray[(intX + intZ * texWidth)*3 + 2]};
+    printf("Normal, x: %f, y: %f, z: %f\n", normal.x, normal.y, normal.z);
+    //printf("Lower for x: %i, z: %i\n", intX, intZ);
   }
   else
   {
-    normal = (vec3){model->normalArray[(intX+1 + intZ+1 * texWidth)*3 + 0], model->normalArray[(intX+1 + intZ+1 * texWidth)*3 + 1], model->normalArray[(intX+1 + intZ+1 * texWidth)*3 + 2]};
-    a_vertex = (vec3){model->vertexArray[(intX+1 + intZ * texWidth)*3 + 0], model->vertexArray[(intX+1 + intZ * texWidth)*3 + 1], model->vertexArray[(intX+1 + intZ * texWidth)*3 + 2]};
+    normal = (vec3){model->normalArray[(intX+1 + (intZ+1) * texWidth)*3 + 0], model->normalArray[(intX+1 + (intZ+1) * texWidth)*3 + 1], model->normalArray[(intX+1 + (intZ+1) * texWidth)*3 + 2]};
+    a_vertex = (vec3){model->vertexArray[(intX+1 + (intZ+1) * texWidth)*3 + 0], model->vertexArray[(intX+1 + (intZ+1) * texWidth)*3 + 1], model->vertexArray[(intX+1 + (intZ+1) * texWidth)*3 + 2]};
+    printf("Normal, x: %f, y: %f, z: %f\n", normal.x, normal.y, normal.z);
+    //printf("Upper for x: %i, z: %i\n", intX, intZ);
   }
 
   // Get constant for plane equation (Ax+By+Cz = D), any corner will do
@@ -134,6 +138,7 @@ Model* GenerateTerrain(TextureData *tex)
     indexArray[(x + z * (tex->width-1))*6 + 5] = x+1 + (z+1) * tex->width;
 
     // Calculating normal vectors
+    // ---------
     vec3 first_vertex = (vec3){vertexArray[(x + z * tex->width)*3 + 0], vertexArray[(x + z * tex->width)*3 + 1], vertexArray[(x + z * tex->width)*3 + 2]};
     vec3 second_vertex;
     vec3 third_vertex;
@@ -145,12 +150,55 @@ Model* GenerateTerrain(TextureData *tex)
 
     vec3 first_base = VectorSub(second_vertex, first_vertex);
     vec3 second_base = VectorSub(third_vertex, first_vertex);
-    vec3 normal = Normalize(CrossProduct(second_base, first_base));
+    vec3 normal_one = Normalize(CrossProduct(second_base, first_base));
     // Make sure normal is always upward facing
-    // if (normal.y < 0)
-    // {
-    //   normal = ScalarMult(normal, -1);
-    // }
+    if (normal_one.y < 0)
+    {
+      normal_one = ScalarMult(normal_one, -1.0);
+    }
+    // ---------
+    second_vertex = (x+1 < tex->width) ? (vec3){vertexArray[((x+1) + z * tex->width)*3 + 0], vertexArray[((x+1) + z * tex->width)*3 + 1], vertexArray[((x+1) + z * tex->width)*3 + 2]} : (vec3){vertexArray[(x + z * tex->width)*3 + 0], vertexArray[(x + z * tex->width)*3 + 1], vertexArray[(x + z * tex->width)*3 + 2]};
+
+    third_vertex = (z-1 > 0) ? (vec3){vertexArray[(x + (z-1) * tex->width)*3 + 0], vertexArray[(x + (z-1) * tex->width)*3 + 1], vertexArray[(x + (z-1) * tex->width)*3 + 2]} : (vec3){vertexArray[(x + z * tex->width)*3 + 0], vertexArray[(x + z * tex->width)*3 + 1],vertexArray[(x + z * tex->width)*3 + 2]};
+
+    first_base = VectorSub(second_vertex, first_vertex);
+    second_base = VectorSub(third_vertex, first_vertex);
+    vec3 normal_two = Normalize(CrossProduct(second_base, first_base));
+    // Make sure normal is always upward facing
+    if (normal_two.y < 0)
+    {
+      normal_two = ScalarMult(normal_two, -1.0);
+    }
+    // ---------
+    second_vertex = (x-1 > 0) ? (vec3){vertexArray[((x-1) + z * tex->width)*3 + 0], vertexArray[((x-1) + z * tex->width)*3 + 1], vertexArray[((x-1) + z * tex->width)*3 + 2]} : (vec3){vertexArray[(x + z * tex->width)*3 + 0], vertexArray[(x + z * tex->width)*3 + 1], vertexArray[(x + z * tex->width)*3 + 2]};
+
+    third_vertex = (z-1 > 0) ? (vec3){vertexArray[(x + (z-1) * tex->width)*3 + 0], vertexArray[(x + (z-1) * tex->width)*3 + 1], vertexArray[(x + (z-1) * tex->width)*3 + 2]} : (vec3){vertexArray[(x + z * tex->width)*3 + 0], vertexArray[(x + z * tex->width)*3 + 1],vertexArray[(x + z * tex->width)*3 + 2]};
+
+    first_base = VectorSub(second_vertex, first_vertex);
+    second_base = VectorSub(third_vertex, first_vertex);
+    vec3 normal_three = Normalize(CrossProduct(second_base, first_base));
+    // Make sure normal is always upward facing
+    if (normal_three.y < 0)
+    {
+      normal_three = ScalarMult(normal_three, -1.0);
+    }
+
+    // --------
+
+    second_vertex = (x-1 > 0) ? (vec3){vertexArray[((x-1) + z * tex->width)*3 + 0], vertexArray[((x-1) + z * tex->width)*3 + 1], vertexArray[((x-1) + z * tex->width)*3 + 2]} : (vec3){vertexArray[(x + z * tex->width)*3 + 0], vertexArray[(x + z * tex->width)*3 + 1], vertexArray[(x + z * tex->width)*3 + 2]};
+
+    third_vertex = (z+1 < tex->height) ? (vec3){vertexArray[(x + (z+1) * tex->width)*3 + 0], vertexArray[(x + (z+1) * tex->width)*3 + 1], vertexArray[(x + (z+1) * tex->width)*3 + 2]} : (vec3){vertexArray[(x + z * tex->width)*3 + 0], vertexArray[(x + z * tex->width)*3 + 1],vertexArray[(x + z * tex->width)*3 + 2]};
+
+    first_base = VectorSub(second_vertex, first_vertex);
+    second_base = VectorSub(third_vertex, first_vertex);
+    vec3 normal_four = Normalize(CrossProduct(second_base, first_base));
+    // Make sure normal is always upward facing
+    if (normal_four.y < 0)
+    {
+      normal_three = ScalarMult(normal_four, -1.0);
+    }
+
+    vec3 normal = Normalize(VectorAdd(VectorAdd(VectorAdd(normal_one, normal_two), normal_three), normal_four));
 
     // Normal vectors. You need to calculate these.
     normalArray[(x + z * tex->width)*3 + 0] = normal.x;
@@ -270,7 +318,7 @@ Model* GenerateTerrain(TextureData *tex)
     int start = 5;
     float y_height = getHeight(tm, start+t, start+t, ttex.width);
     transposeLocation = T(start+t, y_height, start+t);
-    printf("y_height: %f, x/z: %f\n", y_height, start+t);
+    //printf("y_height: %f, x/z: %f\n", y_height, start+t);
 
     printError("pre display");
 
