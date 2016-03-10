@@ -27,6 +27,7 @@
 #include "../common/LoadTGA.h"
 #include "../common/VectorUtils3.h"
 #include "../common/input_handler.h"
+#include <math.h>
 
 mat4 projectionMatrix;
 
@@ -67,6 +68,16 @@ GLint isDirectional[] = {0,0,1,1};
 
 // ----------------------------------------
 
+vec3 getVertex(Model* model, int x, int z, int texWidth)
+{
+  return (vec3){model->vertexArray[(x + z * texWidth)*3 + 0], model->vertexArray[(x + z * texWidth)*3 + 1], model->vertexArray[(x + z * texWidth)*3 + 2]};
+}
+
+vec3 getNormal(Model* model, int x, int z, int texWidth)
+{
+  return (vec3){model->normalArray[(x + z * texWidth)*3 + 0], model->normalArray[(x + z * texWidth)*3 + 1], model->normalArray[(x + z * texWidth)*3 + 2]};
+}
+
 float getHeight(Model* model, float x, float z, int texWidth)
 {
   int intX = (int)x;
@@ -74,29 +85,33 @@ float getHeight(Model* model, float x, float z, int texWidth)
   float deltax = x - (float)intX;
   float deltaz = z - (float)intZ;
 
-  vec3 normal;
-  vec3 a_vertex;
+  vec3 normal[4];
+  vec3 vertice[4];
+  normal[0] = getNormal(model, intX, intZ, texWidth);
+  vertice[0] = getVertex(model, intX, intZ, texWidth);
+  normal[1] = getNormal(model, intX+1, intZ, texWidth);
+  vertice[1] = getVertex(model, intX+1, intZ, texWidth);
+  normal[2] = getNormal(model, intX, intZ+1, texWidth);
+  vertice[2] = getVertex(model, intX, intZ+1, texWidth);
+  normal[3] = getNormal(model, intX+1, intZ+1, texWidth);
+  vertice[3] = getVertex(model, intX+1, intZ+1, texWidth);
 
-  if (deltax + deltaz < 1)
-  {
-    normal = (vec3){model->normalArray[(intX + intZ * texWidth)*3 + 0], model->normalArray[(intX + intZ * texWidth)*3 + 1], model->normalArray[(intX + intZ * texWidth)*3 + 2]};
-    a_vertex = (vec3){model->vertexArray[(intX + intZ * texWidth)*3 + 0], model->vertexArray[(intX + intZ * texWidth)*3 + 1], model->vertexArray[(intX + intZ * texWidth)*3 + 2]};
-    printf("Normal, x: %f, y: %f, z: %f\n", normal.x, normal.y, normal.z);
-    //printf("Lower for x: %i, z: %i\n", intX, intZ);
-  }
-  else
-  {
-    normal = (vec3){model->normalArray[(intX+1 + (intZ+1) * texWidth)*3 + 0], model->normalArray[(intX+1 + (intZ+1) * texWidth)*3 + 1], model->normalArray[(intX+1 + (intZ+1) * texWidth)*3 + 2]};
-    a_vertex = (vec3){model->vertexArray[(intX+1 + (intZ+1) * texWidth)*3 + 0], model->vertexArray[(intX+1 + (intZ+1) * texWidth)*3 + 1], model->vertexArray[(intX+1 + (intZ+1) * texWidth)*3 + 2]};
-    printf("Normal, x: %f, y: %f, z: %f\n", normal.x, normal.y, normal.z);
-    //printf("Upper for x: %i, z: %i\n", intX, intZ);
-  }
+  vec3 temp_normal = ScalarMult(normal[0], sqrt(pow(1-deltax,2)+pow(1-deltaz,2)));
+  temp_normal = VectorAdd(temp_normal, ScalarMult(normal[1], sqrt(pow(1-deltax,2)+pow(deltaz,2))));
+  temp_normal = VectorAdd(temp_normal, ScalarMult(normal[2], sqrt(pow(deltax,2)+pow(1-deltaz,2))));
+  temp_normal = VectorAdd(temp_normal, ScalarMult(normal[2], sqrt(pow(1-deltax,2)+pow(1-deltaz,2))));
+  temp_normal = Normalize(temp_normal);
+
+  vec3 temp_vertice = VectorAdd(vertice[0], vertice[1]);
+  temp_vertice = VectorAdd(temp_vertice, vertice[2]);
+  temp_vertice = VectorAdd(temp_vertice, vertice[3]);
+  temp_vertice = ScalarMult(temp_vertice, 0.25);
 
   // Get constant for plane equation (Ax+By+Cz = D), any corner will do
-  float D = DotProduct(normal, a_vertex);
+  float D = DotProduct(temp_normal, temp_vertice);
 
   // Return height = y = (D-Ax-Cz)/B
-  return (D - normal.x*x - normal.z*z)/normal.y;
+  return (D - temp_normal.x*x - temp_normal.z*z)/temp_normal.y;
 }
 
 // ----------------------------------------
