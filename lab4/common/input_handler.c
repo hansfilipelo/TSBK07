@@ -6,7 +6,7 @@ void handle_keyboard(vec3* cameraLocation, vec3* lookAtPoint, const vec3* upVect
   // This is the direction the camera is looking
   vec3 translator;
   vec3 direction = Normalize(VectorSub(*cameraLocation, *lookAtPoint));
-  vec3 projected_direction = Normalize(direction);
+  vec3 projected_direction = Normalize((vec3){direction.x, 0, direction.z});
 
   if ( glutKeyIsDown('w') ) {
     translator = ScalarMult(projected_direction,-*movement_speed);
