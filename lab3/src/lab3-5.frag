@@ -60,6 +60,6 @@ void main(void)
 	}
 
 	// Out
-	shade = 0.3*diffuse + 0.2*specular; //vec4(shade, 1.0)
-	out_Color = vec4(shade, 1.0) + texture(tex, outTexCoord) * sin(surface_position.x*0.5) + texture(tex1, outTexCoord) * (1-sin(surface_position.x*0.5));
+	shade = 0.3*diffuse + specular; //vec4(shade, 1.0)
+	out_Color = vec4(shade, 1.0)*(texture(tex, outTexCoord) * sin(surface_position.x*0.5) + texture(tex1, outTexCoord) * (1-sin(surface_position.x*0.5)));
 }
