@@ -10,7 +10,7 @@ Use the same translations for both objects once we've gotten them in the wings i
 
 **You may have to tweak some numbers to make the placement right. How can you do that without making a lot of small changes in numbers in the code followed by recompilations?**
 
-Set the numbers in the vertex shader (which I don't do).
+Either take in-arguments to the program or use a model with predefined values. 
 
 ## 3-2
 

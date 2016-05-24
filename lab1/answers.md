@@ -44,7 +44,7 @@ Gouraud shading. Flat shading or Phong shading are other techniques.
 I forgot to update the command glDrawArrays which took a while to debug.
 
 **How do you change the facing of a polygon?**
-Using different colors? Z-buffer? I don't get it.
+Using different colors? Rotate? I don't get the question entirely.
 
 ## 1-6
 **Why do we need normal vectors for a model?**
@@ -54,7 +54,7 @@ For calculatin the correct reflection for light?
 Just set the colors to the normal vector.
 
 **Should a normal vector always be perpendicular to a certain triangle? If not, why?**
-It should.
+Bumpmapping. 
 
 **Now we are using glBindBuffer and glBufferData again. They deal with buffers, but in what way?**
 Enables a buffer on the GPU, gives us a reference to that buffer and then we can uppload data to it.
