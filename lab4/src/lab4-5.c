@@ -85,33 +85,48 @@ float getHeight(Model* model, float x, float z, int texWidth)
     float deltax = x - (float)intX;
     float deltaz = z - (float)intZ;
 
-    vec3 normal[4];
-    vec3 vertice[4];
-    normal[0] = getNormal(model, intX, intZ, texWidth);
-    vertice[0] = getVertex(model, intX, intZ, texWidth);
-    normal[1] = getNormal(model, intX+1, intZ, texWidth);
-    vertice[1] = getVertex(model, intX+1, intZ, texWidth);
-    normal[2] = getNormal(model, intX, intZ+1, texWidth);
-    vertice[2] = getVertex(model, intX, intZ+1, texWidth);
-    normal[3] = getNormal(model, intX+1, intZ+1, texWidth);
-    vertice[3] = getVertex(model, intX+1, intZ+1, texWidth);
+    //vec3 vertice[3];
+    vec3 normal;
+    vec3 vertice[3];
+    float scalers[3];
+    float distance_x;
+    float distance_z;
 
-    vec3 temp_normal = ScalarMult(normal[0], sqrt(pow(1-deltax,2)+pow(1-deltaz,2)));
-    temp_normal = VectorAdd(temp_normal, ScalarMult(normal[1], sqrt(pow(1-deltax,2)+pow(deltaz,2))));
-    temp_normal = VectorAdd(temp_normal, ScalarMult(normal[2], sqrt(pow(deltax,2)+pow(1-deltaz,2))));
-    temp_normal = VectorAdd(temp_normal, ScalarMult(normal[2], sqrt(pow(1-deltax,2)+pow(1-deltaz,2))));
-    temp_normal = Normalize(temp_normal);
+    if ( deltax + deltaz < 1 ) {
+       
+        vertice[0] = getVertex(model, intX, intZ, texWidth);
+        vertice[1] = getVertex(model, intX+1, intZ, texWidth);
+        vertice[2] = getVertex(model, intX, intZ+1, texWidth);
 
-    vec3 temp_vertice = VectorAdd(vertice[0], vertice[1]);
-    temp_vertice = VectorAdd(temp_vertice, vertice[2]);
-    temp_vertice = VectorAdd(temp_vertice, vertice[3]);
-    temp_vertice = ScalarMult(temp_vertice, 0.25);
+        normal = CrossProduct(VectorSub(vertice[1],vertice[0]), VectorSub(vertice[2], vertice[0])); 
+        //distance_x = vertice[1].x - vertice[0].x;
+        //distance_z = vertice[2].z - vertice[0].z;
 
-    // Get constant for plane equation (Ax+By+Cz = D), any corner will do
-    float D = DotProduct(temp_normal, temp_vertice);
+        //scalers[0] = sqrt(pow((distance_x-deltax)/distance_x,2) + pow((distance_z-deltaz)/distance_z,2));
+        //scalers[1] = sqrt(pow(deltax/distance_x,2) + pow((distance_z-deltaz)/distance_z,2));
+        //scalers[2] = sqrt(pow((distance_x-deltax)/distance_x,2) + pow(deltaz/distance_z,2));
+    }
+    else {
+        deltax = (float)intX+1.f - x;
+        deltaz = (float)intZ+1.f - z;
+        vertice[0] = getVertex(model, intX+1, intZ+1, texWidth);
+        vertice[1] = getVertex(model, intX+1, intZ, texWidth);
+        vertice[2] = getVertex(model, intX, intZ+1, texWidth);
+        
+        normal = CrossProduct(VectorSub(vertice[1],vertice[0]), VectorSub(vertice[2], vertice[0])); 
+        //distance_x = vertice[0].x - vertice[2].x;
+        //distance_z = vertice[0].z - vertice[1].z;
 
-    // Return height = y = (D-Ax-Cz)/B
-    return (D - temp_normal.x*x - temp_normal.z*z)/temp_normal.y;
+        //scalers[0] = sqrt(pow((distance_x-deltax)/distance_x,2) + pow((distance_z-deltaz)/distance_z,2));
+        //scalers[2] = sqrt(pow(deltax/distance_x,2) + pow((distance_z-deltaz)/distance_z,2));
+        //scalers[1] = sqrt(pow((distance_x-deltax)/distance_x,2) + pow(deltaz/distance_z,2));
+    }
+    
+    float D = normal.x*vertice[0].x + normal.y*vertice[0].y + normal.z*vertice[0].z;
+
+    float height = (D-normal.x*x-normal.z*z)/normal.y;
+    
+    return height;
 }
 
 // ----------------------------------------
